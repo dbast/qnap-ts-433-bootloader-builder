@@ -1,0 +1,13 @@
+diff --git a/tools/ddrbin_param.txt b/tools/ddrbin_param.txt
+index 0dfdd318..82ade7e7 100644
+--- a/tools/ddrbin_param.txt
++++ b/tools/ddrbin_param.txt
+@@ -11,7 +11,7 @@ lp5_freq=
+
+ uart id=
+ uart iomux=
+-uart baudrate=
++uart baudrate=115200
+
+ sr_idle=
+ pd_idle=

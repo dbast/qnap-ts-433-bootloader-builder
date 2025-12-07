@@ -1,0 +1,8 @@
+[submodule "rkbin"]
+	path = rkbin
+	url = git@github.com:rockchip-linux/rkbin.git
+	branch = master
+[submodule "u-boot"]
+	path = u-boot
+	url = git@github.com:u-boot/u-boot.git
+	branch = v2025.01
