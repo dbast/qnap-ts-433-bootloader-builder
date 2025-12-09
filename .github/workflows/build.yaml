@@ -1,0 +1,55 @@
+on:
+  push:
+    branches:
+      - main
+  release:
+    types: [published]
+  pull_request:
+  workflow_dispatch:
+
+name: Build
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          submodules: true
+      - name: Enable binfmt
+        run: |
+          make enable-binfmt
+      - name: Create container
+        run: |
+          make build-image
+      - name: Build U-Boot
+        run: |
+          make build-u-boot
+      - name: Patch
+        run: |
+          make patch-rkbin
+      - name: Create SPL Loader
+        run: |
+          make spl-loader
+      - name: Store result
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        with:
+          name: artifacts
+          path: artifacts/**
+          retention-days: 2
+      - name: Upload sha256 sums to release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >
+          gh release upload
+          --clobber "${{ github.ref_name }}"
+          --repo "${{ github.repository }}"
+          artifacts/*.sha256
