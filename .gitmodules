@@ -5,4 +5,4 @@
 [submodule "u-boot"]
 	path = u-boot
 	url = git@github.com:u-boot/u-boot.git
-	branch = v2025.01
+	branch = v2025.10
