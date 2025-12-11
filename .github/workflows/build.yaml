@@ -29,6 +29,9 @@ jobs:
       - name: Create container
         run: |
           make build-image
+      - name: Build ATF
+        run: |
+          make build-bl31
       - name: Build U-Boot
         run: |
           make build-u-boot
