@@ -76,7 +76,7 @@ build-u-boot:
 	  bash -exc '\
 	    cd $(UBOOT_DIR) && \
 	    export BL31=../$(ATF_BL31) && \
-	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1056MHz_v1.23.bin && \
+	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.23.bin && \
 	    make qnap-ts433-rk3568_defconfig && \
 	    make && \
 	    sha256sum u-boot-rockchip.bin | tee u-boot-rockchip.bin.sha256 \
