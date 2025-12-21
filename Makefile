@@ -53,6 +53,9 @@ spl-loader:
 	    cp rk356x_spl_loader_v1.* /rkbin-src/$(ARTIFACTS_DIR)/ \
 	  '
 
+patch-tf-a:
+	cd trusted-firmware-a && git apply ../0001-rockchip-rk3568-implement-PSCI-system_off.patch
+
 build-bl31:
 	docker run --rm \
 	  --platform=linux/arm64 \

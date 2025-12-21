@@ -29,13 +29,16 @@ jobs:
       - name: Create container
         run: |
           make build-image
+      - name: Patch tf-a
+        run: |
+          make patch-tf-a
       - name: Build ATF
         run: |
           make build-bl31
       - name: Build U-Boot
         run: |
           make build-u-boot
-      - name: Patch
+      - name: Patch rkbin
         run: |
           make patch-rkbin
       - name: Create SPL Loader

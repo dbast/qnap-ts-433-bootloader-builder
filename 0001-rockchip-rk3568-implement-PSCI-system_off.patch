@@ -1,0 +1,60 @@
+From 799577ccff3c7ae7a7fb99f10661d7582b91eca6 Mon Sep 17 00:00:00 2001
+From: Daniel Bast <2790401+dbast@users.noreply.github.com>
+Date: Sun, 21 Dec 2025 09:51:32 +0100
+Subject: [PATCH] rockchip: rk3568: implement PSCI system_off
+
+RK3568 currently relies on the weak rockchip_soc_system_off() stub, so a
+PSCI SYSTEM_OFF request never powers the system down and can hang in EL3.
+
+Implement rockchip_soc_system_off() for RK3568 by asserting the external
+PMIC sleep pin, mirroring the approach used on other Rockchip platforms.
+
+Also log the poweroff path at NOTICE level so it is visible in release
+builds.
+---
+ plat/rockchip/rk3568/drivers/pmu/pmu.c | 29 ++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
+
+diff --git a/plat/rockchip/rk3568/drivers/pmu/pmu.c b/plat/rockchip/rk3568/drivers/pmu/pmu.c
+index 78510191a..5be1ea693 100644
+--- a/plat/rockchip/rk3568/drivers/pmu/pmu.c
++++ b/plat/rockchip/rk3568/drivers/pmu/pmu.c
+@@ -53,6 +53,35 @@ void __dead2 rockchip_soc_sys_pd_pwr_dn_wfi(void)
+ 		wfi();
+ }
+ 
++void __dead2 rockchip_soc_system_off(void)
++{
++	NOTICE("system poweroff......\n");
++
++	/*
++	 * Request system power-off via external PMIC sleep pin (GPIO0_A2).
++	 *
++	 * Put the pin into GPIO mode and drive it high. The exact wiring is
++	 * board-specific, but this matches how other Rockchip platforms assert
++	 * PMIC_SLEEP for poweroff.
++	 */
++	mmio_write_32(PMUGRF_BASE + PMU_GRF_GPIO0A_IOMUX_L, PMIC_SLEEP_GPIO);
++
++	/* Configure GPIO0_A2 as output */
++	mmio_write_32(GPIO0_BASE + GPIO_SWPORT_DDR_L, PMIC_SLEEP_OUT);
++
++	/* Drive GPIO0_A2 high */
++	mmio_write_32(GPIO0_BASE + GPIO_SWPORT_DR_L, PMIC_SLEEP_HIGH_LEVEL);
++	dsb();
++
++	/*
++	 * Maybe the HW needs some times to power off the system,
++	 * so we do not hope the core to execute valid codes.
++	 */
++	while (1) {
++		wfi();
++	}
++}
++
+ static void pmu_pmic_sleep_mode_config(void)
+ {
+ 	/* pmic sleep function selection
+-- 
+2.52.0
+
