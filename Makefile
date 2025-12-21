@@ -53,6 +53,11 @@ spl-loader:
 	    cp rk356x_spl_loader_v1.* /rkbin-src/$(ARTIFACTS_DIR)/ \
 	  '
 
+patch-tf-a:
+	cd trusted-firmware-a && \
+	git apply ../0001-Print-ID_AA64ISAR0_EL1-ID_AA64ISAR1_EL1.patch && \
+	git apply ../0002-Set-baudrate-to-115200.patch
+
 build-bl31:
 	docker run --rm \
 	  --platform=linux/arm64 \
