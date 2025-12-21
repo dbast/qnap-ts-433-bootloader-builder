@@ -34,7 +34,9 @@ build-image:
 	docker build --platform=linux/arm64 -t $(DOCKER_IMAGE) .
 
 patch-rkbin:
-	cd $(RKBIN_DIR) && git apply ../ddrbin_param.patch
+	cd $(RKBIN_DIR) && \
+	git apply ../ddrbin_param.patch && \
+	git apply ../0001-Enable-setting-current_time-from-env-variable.patch
 
 spl-loader:
 	# boot_merger = x86_64 elf linux binary
@@ -43,6 +45,7 @@ spl-loader:
 	  --platform=linux/amd64 \
 	  -v $$PWD:/rkbin-src \
 	  -w /rkbin-src/$(RKBIN_DIR) \
+	  -e SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH) \
 	  $(RKBIN_TOOLS_IMAGE) \
 	  bash -exc '\
 	    apt-get update && \
@@ -52,6 +55,10 @@ spl-loader:
 		sha256sum rk356x_spl_loader_v1.*.bin | tee rk356x_spl_loader_v1.sha256 && \
 	    cp rk356x_spl_loader_v1.* /rkbin-src/$(ARTIFACTS_DIR)/ \
 	  '
+
+patch-tf-a:
+	cd trusted-firmware-a && \
+	git apply ../0001-Set-baudrate-to-115200.patch
 
 build-bl31:
 	docker run --rm \

@@ -1,0 +1,29 @@
+From dee3a00b11b66e594648acfbc3c9991d2eae3d7d Mon Sep 17 00:00:00 2001
+From: Daniel Bast <2790401+dbast@users.noreply.github.com>
+Date: Sun, 28 Dec 2025 11:35:04 +0100
+Subject: [PATCH] Enable setting current_time from env variable
+
+---
+ tools/ddrbin_tool.py | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/tools/ddrbin_tool.py b/tools/ddrbin_tool.py
+index 8e00b979..ab49d5f4 100755
+--- a/tools/ddrbin_tool.py
++++ b/tools/ddrbin_tool.py
+@@ -1618,7 +1618,11 @@ def ddrbin_tool(argc, argv):
+     if verinfo_editable_offset != 0:
+         if verinfo_editable == '':
+             #print(f"position_1={position_1}, position_2={position_2}, {old_verinfo_editable}")
+-            current_time = datetime.now()
++            source_date_epoch = os.environ.get('SOURCE_DATE_EPOCH', '')
++            if source_date_epoch:
++                current_time = datetime.fromtimestamp(int(source_date_epoch))
++            else:
++                current_time = datetime.now()
+             verinfo_editable = current_time.strftime("%y/%m/%d-%H:%M.%S")
+         if len(verinfo_editable) < verinfo_editable_length:
+             verinfo_editable = verinfo_editable.ljust(verinfo_editable_length)
+-- 
+2.52.0
+

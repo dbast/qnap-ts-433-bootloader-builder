@@ -26,21 +26,24 @@ jobs:
       - name: Enable binfmt
         run: |
           make enable-binfmt
-      - name: Create container
-        run: |
-          make build-image
-      - name: Build ATF
-        run: |
-          make build-bl31
-      - name: Build U-Boot
-        run: |
-          make build-u-boot
-      - name: Patch
+      - name: Patch rkbin
         run: |
           make patch-rkbin
       - name: Create SPL Loader
         run: |
           make spl-loader
+      - name: Create container
+        run: |
+          make build-image
+      - name: Patch tf-a
+        run: |
+          make patch-tf-a
+      - name: Build tf-a
+        run: |
+          make build-bl31
+      - name: Build U-Boot
+        run: |
+          make build-u-boot
       - name: Store result
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
