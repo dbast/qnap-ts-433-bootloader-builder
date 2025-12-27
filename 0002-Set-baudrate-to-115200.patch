@@ -1,0 +1,25 @@
+From f651969b686f5500fb5de0aebb6ddd1e5144a57f Mon Sep 17 00:00:00 2001
+From: Daniel Bast <2790401+dbast@users.noreply.github.com>
+Date: Sat, 27 Dec 2025 15:20:17 +0100
+Subject: [PATCH 2/2] Set baudrate to 115200
+
+---
+ plat/rockchip/rk3568/rk3568_def.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/plat/rockchip/rk3568/rk3568_def.h b/plat/rockchip/rk3568/rk3568_def.h
+index c5bdca4dd..abf328769 100644
+--- a/plat/rockchip/rk3568/rk3568_def.h
++++ b/plat/rockchip/rk3568/rk3568_def.h
+@@ -69,7 +69,7 @@
+  * UART related constants
+  **************************************************************************/
+ #define FPGA_UART_BASE		UART2_BASE
+-#define FPGA_BAUDRATE		1500000
++#define FPGA_BAUDRATE		115200
+ #define FPGA_UART_CLOCK		24000000
+ 
+ /******************************************************************************
+-- 
+2.52.0
+

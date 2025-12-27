@@ -1,6 +1,7 @@
 # disable autofixing PRs, commenting "pre-commit.ci autofix" on a pull request triggers a autofix
 ci:
   autofix_prs: false
+exclude: .*\.patch
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
