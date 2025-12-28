@@ -67,6 +67,8 @@ For end-to-end OS installation guides on the TS-433 with different distributions
 - Debian: https://wiki.debian.org/InstallingDebianOn/Qnap/TS-433
 - Gentoo: https://wiki.gentoo.org/wiki/QNAP_TS-433
 
+Or follow the instructions in the [debian](debian/) folder for a Debian Trixie Network Installer.
+
 ## TODO
 
 Integrate an open-source DDR training implementation once the community reverse-engineering effort for RK3568 DRAM initialization has matured (see CyReVolt’s ongoing work: https://mastodon.social/@CyReVolt/114762696953789988). This would allow replacing the remaining rkbin DDR firmware blobs and complete the transition to a fully open boot chain.
