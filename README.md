@@ -21,7 +21,7 @@ It is a helper project to build a Rockchip U-Boot image for the QNAP TS-433 (RK3
 - A pinned Debian-based Docker build environment
 
 > [!NOTE]
-> This project intentionally uses newer rkbin firmware blobs than those referenced in the official U-Boot TS-433 documentation and integrates a self-built Trusted Firmware-A (BL31) instead of the proprietary rkbin version.
+> This project intentionally uses newer rkbin firmware blobs than those referenced in the official U-Boot TS-433 documentation. It can also integrate a self-built Trusted Firmware-A (BL31) instead of the proprietary rkbin version, but that currently leads to the armv8 cryptography extension being disabled.
 
 The result is a `u-boot-rockchip.bin` + updated spl loader to flash the TS-433 eMMC via `rkdeveloptool`.
 
@@ -70,6 +70,8 @@ For end-to-end OS installation guides on the TS-433 with different distributions
 ## TODO
 
 Integrate an open-source DDR training implementation once the community reverse-engineering effort for RK3568 DRAM initialization has matured (see CyReVolt’s ongoing work: https://mastodon.social/@CyReVolt/114762696953789988). This would allow replacing the remaining rkbin DDR firmware blobs and complete the transition to a fully open boot chain.
+
+Switch to tf-a once a crypto extension enablement changeset landed similar to https://review.trustedfirmware.org/c/TF-A/trusted-firmware-a/+/29363
 
 ## Warranty
 
