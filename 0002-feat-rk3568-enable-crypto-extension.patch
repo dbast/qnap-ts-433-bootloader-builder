@@ -1,4 +1,4 @@
-From f42159f04d27473808dbcef55611959737cd755f Mon Sep 17 00:00:00 2001
+From 378f6870c55733b73cd4179e3d6fc6df33a9edf1 Mon Sep 17 00:00:00 2001
 From: Daniel Bast <2790401+dbast@users.noreply.github.com>
 Date: Sun, 28 Dec 2025 22:22:32 +0100
 Subject: [PATCH 2/2] feat(rk3568): enable crypto extension
@@ -10,7 +10,7 @@ Subject: [PATCH 2/2] feat(rk3568): enable crypto extension
  3 files changed, 72 insertions(+)
 
 diff --git a/plat/rockchip/rk3568/drivers/pmu/pmu.c b/plat/rockchip/rk3568/drivers/pmu/pmu.c
-index 78510191a..41f210a85 100644
+index 78510191a..396d8f368 100644
 --- a/plat/rockchip/rk3568/drivers/pmu/pmu.c
 +++ b/plat/rockchip/rk3568/drivers/pmu/pmu.c
 @@ -544,3 +544,67 @@ void plat_rockchip_pmu_init(void)
@@ -31,10 +31,10 @@ index 78510191a..41f210a85 100644
 +
 +	/*
 +	 * check the crypto function had been enabled or not
-+	 * PMUGRF_SOC_CON0 bit 15 = 1 means crypto disabled
++	 * PMUGRF_SOC_CON0 bit 15 = 1 means crypto enabled
 +	 */
 +	val = mmio_read_32(PMUGRF_BASE + PMU_GRF_SOC_CON(0));
-+	if (val & BIT(15)) {
++	if ((val & BIT(15)) == 0) {
 +		/* save x0~x3 */
 +		boot_cpu_save[0] = arg0;
 +		boot_cpu_save[1] = arg1;
@@ -42,7 +42,7 @@ index 78510191a..41f210a85 100644
 +		boot_cpu_save[3] = arg3;
 +
 +		/* enable the crypto function - clear bit 15 */
-+		val = val & ~BIT(15);
++		val = val | BIT(15);
 +		mmio_write_32(PMUGRF_BASE + PMU_GRF_SOC_CON(0),
 +			      val | (BIT(15) << 16));
 +
