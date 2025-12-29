@@ -1,4 +1,4 @@
-From 378f6870c55733b73cd4179e3d6fc6df33a9edf1 Mon Sep 17 00:00:00 2001
+From 4ce3060adc3feb807b9100379ddb2d27529a6116 Mon Sep 17 00:00:00 2001
 From: Daniel Bast <2790401+dbast@users.noreply.github.com>
 Date: Sun, 28 Dec 2025 22:22:32 +0100
 Subject: [PATCH 2/2] feat(rk3568): enable crypto extension
@@ -10,7 +10,7 @@ Subject: [PATCH 2/2] feat(rk3568): enable crypto extension
  3 files changed, 72 insertions(+)
 
 diff --git a/plat/rockchip/rk3568/drivers/pmu/pmu.c b/plat/rockchip/rk3568/drivers/pmu/pmu.c
-index 78510191a..396d8f368 100644
+index 78510191a..e4c4bde59 100644
 --- a/plat/rockchip/rk3568/drivers/pmu/pmu.c
 +++ b/plat/rockchip/rk3568/drivers/pmu/pmu.c
 @@ -544,3 +544,67 @@ void plat_rockchip_pmu_init(void)
@@ -20,7 +20,6 @@ index 78510191a..396d8f368 100644
 +
 +static uint64_t boot_cpu_save[4];
 +static uint32_t need_en_crypto = 1;
-+
 +void rockchip_cpu_reset_early(u_register_t arg0, u_register_t arg1,
 +			      u_register_t arg2, u_register_t arg3)
 +{
@@ -29,34 +28,35 @@ index 78510191a..396d8f368 100644
 +	if (need_en_crypto == 0)
 +		return;
 +
-+	/*
-+	 * check the crypto function had been enabled or not
-+	 * PMUGRF_SOC_CON0 bit 15 = 1 means crypto enabled
-+	 */
 +	val = mmio_read_32(PMUGRF_BASE + PMU_GRF_SOC_CON(0));
-+	if ((val & BIT(15)) == 0) {
++
++	if (val & BIT(15)) {
 +		/* save x0~x3 */
 +		boot_cpu_save[0] = arg0;
 +		boot_cpu_save[1] = arg1;
 +		boot_cpu_save[2] = arg2;
 +		boot_cpu_save[3] = arg3;
 +
-+		/* enable the crypto function - clear bit 15 */
-+		val = val | BIT(15);
-+		mmio_write_32(PMUGRF_BASE + PMU_GRF_SOC_CON(0),
-+			      val | (BIT(15) << 16));
++		/* Configure PMU CPU auto power (CRITICAL!) */
++		mmio_write_32(PMU_BASE + 0x310, 0x0f000500);
++		mmio_write_32(PMU_BASE + 0x314, 0x000f0005);
 +
-+		/* remap pmusram to 0xffff0000 */
-+		mmio_write_32(PMUSGRF_BASE + PMU_SGRF_SOC_CON1, 0x00030001);
-+		psram_sleep_cfg->pm_flag = PM_WARM_BOOT_BIT;
-+		cpuson_flags[0] = PMU_CPU_HOTPLUG;
-+		cpuson_entry_point[0] = (uintptr_t)BL31_BASE;
++		/* Wait for PMU ready */
++		do {
++			val = mmio_read_32(PMU_BASE + 0x31c);
++		} while ((val & 0xe) != 0xe);
++
++		/* PMU SRAM remap */
++		mmio_write_32(PMUSRAM_BASE + 0x04, 0x18000800);
++
++		/* Setup boot vector */
++		mmio_write_32(PMUSRAM_BASE + 0x2a0, (uintptr_t)BL31_BASE);
++
++		/* Enable boot */
++		mmio_write_32(PMU_BASE + 0x1fc0 + 0x20, 0x1);
 +		dsb();
 +
-+		/*
-+		 * Must reset core0 to enable the crypto function.
-+		 * Core0 will boot from pmu_sram and jump to BL31_BASE.
-+		 */
++		/* Reset CPU */
 +		__asm__ volatile ("mov	x0, #3\n"
 +				  "dsb	sy\n"
 +				  "msr	rmr_el3, x0\n"
@@ -67,12 +67,12 @@ index 78510191a..396d8f368 100644
 +	} else {
 +		need_en_crypto = 0;
 +
-+		/* remap bootrom to 0xffff0000 */
++		/* Crypto already enabled - remap bootrom */
 +		mmio_write_32(PMUSGRF_BASE + PMU_SGRF_SOC_CON1, 0x00030000);
 +
 +		/*
 +		 * The crypto function has been enabled,
-+		 * restore the x0~x3.
++		 * restore of x0~x3.
 +		 */
 +		__asm__ volatile ("ldr	x20, [%0]\n"
 +				  "ldr	x21, [%0, 0x8]\n"
