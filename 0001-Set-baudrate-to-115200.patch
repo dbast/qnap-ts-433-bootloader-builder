@@ -1,7 +1,7 @@
 From 23dcaf15e25d022306f23bdebaad68a15a94191f Mon Sep 17 00:00:00 2001
 From: Daniel Bast <2790401+dbast@users.noreply.github.com>
 Date: Sat, 27 Dec 2025 15:20:17 +0100
-Subject: [PATCH] Set baudrate to 115200
+Subject: [PATCH 1/2] Set baudrate to 115200
 
 ---
  plat/rockchip/rk3568/rk3568_def.h | 2 +-

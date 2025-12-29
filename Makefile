@@ -58,7 +58,8 @@ spl-loader:
 
 patch-tf-a:
 	cd trusted-firmware-a && \
-	git apply ../0001-Set-baudrate-to-115200.patch
+	git apply ../0001-Set-baudrate-to-115200.patch && \
+	git apply ../0002-feat-rk3568-enable-crypto-extension.patch
 
 build-bl31:
 	docker run --rm \

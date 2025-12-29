@@ -1,0 +1,114 @@
+From f42159f04d27473808dbcef55611959737cd755f Mon Sep 17 00:00:00 2001
+From: Daniel Bast <2790401+dbast@users.noreply.github.com>
+Date: Sun, 28 Dec 2025 22:22:32 +0100
+Subject: [PATCH 2/2] feat(rk3568): enable crypto extension
+
+---
+ plat/rockchip/rk3568/drivers/pmu/pmu.c | 64 ++++++++++++++++++++++++++
+ plat/rockchip/rk3568/drivers/pmu/pmu.h |  5 ++
+ plat/rockchip/rk3568/platform.mk       |  3 ++
+ 3 files changed, 72 insertions(+)
+
+diff --git a/plat/rockchip/rk3568/drivers/pmu/pmu.c b/plat/rockchip/rk3568/drivers/pmu/pmu.c
+index 78510191a..41f210a85 100644
+--- a/plat/rockchip/rk3568/drivers/pmu/pmu.c
++++ b/plat/rockchip/rk3568/drivers/pmu/pmu.c
+@@ -544,3 +544,67 @@ void plat_rockchip_pmu_init(void)
+ 	 */
+ 	mmio_write_32(PMUSGRF_BASE + PMU_SGRF_SOC_CON1, 0x18000800);
+ }
++
++static uint64_t boot_cpu_save[4];
++static uint32_t need_en_crypto = 1;
++
++void rockchip_cpu_reset_early(u_register_t arg0, u_register_t arg1,
++			      u_register_t arg2, u_register_t arg3)
++{
++	uint32_t val;
++
++	if (need_en_crypto == 0)
++		return;
++
++	/*
++	 * check the crypto function had been enabled or not
++	 * PMUGRF_SOC_CON0 bit 15 = 1 means crypto disabled
++	 */
++	val = mmio_read_32(PMUGRF_BASE + PMU_GRF_SOC_CON(0));
++	if (val & BIT(15)) {
++		/* save x0~x3 */
++		boot_cpu_save[0] = arg0;
++		boot_cpu_save[1] = arg1;
++		boot_cpu_save[2] = arg2;
++		boot_cpu_save[3] = arg3;
++
++		/* enable the crypto function - clear bit 15 */
++		val = val & ~BIT(15);
++		mmio_write_32(PMUGRF_BASE + PMU_GRF_SOC_CON(0),
++			      val | (BIT(15) << 16));
++
++		/* remap pmusram to 0xffff0000 */
++		mmio_write_32(PMUSGRF_BASE + PMU_SGRF_SOC_CON1, 0x00030001);
++		psram_sleep_cfg->pm_flag = PM_WARM_BOOT_BIT;
++		cpuson_flags[0] = PMU_CPU_HOTPLUG;
++		cpuson_entry_point[0] = (uintptr_t)BL31_BASE;
++		dsb();
++
++		/*
++		 * Must reset core0 to enable the crypto function.
++		 * Core0 will boot from pmu_sram and jump to BL31_BASE.
++		 */
++		__asm__ volatile ("mov	x0, #3\n"
++				  "dsb	sy\n"
++				  "msr	rmr_el3, x0\n"
++				  "1:\n"
++				  "isb\n"
++				  "wfi\n"
++				  "b	1b\n");
++	} else {
++		need_en_crypto = 0;
++
++		/* remap bootrom to 0xffff0000 */
++		mmio_write_32(PMUSGRF_BASE + PMU_SGRF_SOC_CON1, 0x00030000);
++
++		/*
++		 * The crypto function has been enabled,
++		 * restore the x0~x3.
++		 */
++		__asm__ volatile ("ldr	x20, [%0]\n"
++				  "ldr	x21, [%0, 0x8]\n"
++				  "ldr	x22, [%0, 0x10]\n"
++				  "ldr	x23, [%0, 0x18]\n"
++				  : : "r" (&boot_cpu_save[0]));
++	}
++}
+diff --git a/plat/rockchip/rk3568/drivers/pmu/pmu.h b/plat/rockchip/rk3568/drivers/pmu/pmu.h
+index 5821514ba..1192430fb 100644
+--- a/plat/rockchip/rk3568/drivers/pmu/pmu.h
++++ b/plat/rockchip/rk3568/drivers/pmu/pmu.h
+@@ -301,4 +301,9 @@ enum pmu_vol_gate_soft_con {
+ 	VD_NPU_ENA,
+ };
+ 
++#ifdef PLAT_RK_CPU_RESET_EARLY
++void rockchip_cpu_reset_early(u_register_t arg0, u_register_t arg1,
++			      u_register_t arg2, u_register_t arg3);
++#endif
++
+ #endif /* __PMU_H__ */
+diff --git a/plat/rockchip/rk3568/platform.mk b/plat/rockchip/rk3568/platform.mk
+index 1f8a80e51..f0df2de51 100644
+--- a/plat/rockchip/rk3568/platform.mk
++++ b/plat/rockchip/rk3568/platform.mk
+@@ -99,6 +99,9 @@ HW_ASSISTED_COHERENCY	:=	1
+ #Enable errata for cortex_a55
+ ERRATA_A55_1530923	:=	1
+ 
++# Enable CPU crypto extensions
++$(eval $(call add_define,PLAT_RK_CPU_RESET_EARLY))
++
+ # When building for systems with hardware-assisted coherency, there's no need to
+ # use USE_COHERENT_MEM. Require that USE_COHERENT_MEM must be set to 0 too.
+ USE_COHERENT_MEM	:=	0
+-- 
+2.52.0
+
