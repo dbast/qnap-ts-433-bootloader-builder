@@ -8,5 +8,16 @@
   ],
   "git-submodules": {
     "enabled": true
-  }
+  },
+  "packageRules": [
+    {
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "debian"
+      ],
+      "versioning": "regex:^trixie-(?<major>\\d{4})(?<minor>\\d{2})(?<patch>\\d{2})-slim$"
+    }
+  ]
 }
