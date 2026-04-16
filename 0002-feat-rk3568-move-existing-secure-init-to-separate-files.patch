@@ -1,0 +1,175 @@
+From 1dc8eb91c7090e3b04e7717368cb6484c0ff74f7 Mon Sep 17 00:00:00 2001
+From: Heiko Stuebner <heiko@sntech.de>
+Date: Wed, 10 Sep 2025 11:07:00 +0200
+Subject: [PATCH] feat(rk3568): move existing secure init to separate files
+
+Move the existing secure_timer_init() and sgrf_init() to a separate
+file similar to the other Rockchip platforms.
+
+This allows us to add additional secure init later on.
+
+Signed-off-by: Heiko Stuebner <heiko@sntech.de>
+Change-Id: I1151abed77d68b3730d505c547919e60415e3951
+---
+ plat/rockchip/rk3568/drivers/secure/secure.c | 39 ++++++++++++++++++++++++++++
+ plat/rockchip/rk3568/drivers/secure/secure.h | 17 ++++++++++++
+ plat/rockchip/rk3568/drivers/soc/soc.c       | 26 +------------------
+ plat/rockchip/rk3568/drivers/soc/soc.h       |  5 +---
+ plat/rockchip/rk3568/platform.mk             |  2 ++
+ 5 files changed, 60 insertions(+), 29 deletions(-)
+
+diff --git a/plat/rockchip/rk3568/drivers/secure/secure.c b/plat/rockchip/rk3568/drivers/secure/secure.c
+new file mode 100644
+index 000000000..2e84fa8de
+--- /dev/null
++++ b/plat/rockchip/rk3568/drivers/secure/secure.c
+@@ -0,0 +1,39 @@
++/*
++ * Copyright (c) 2024-2026, Rockchip, Inc. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#include <assert.h>
++#include <lib/mmio.h>
++
++#include <platform_def.h>
++
++#include "secure.h"
++#include <soc.h>
++
++void secure_timer_init(void)
++{
++	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_CONTROL_REG, TIMER_DIS);
++	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_LOAD_COUNT0, 0xffffffff);
++	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_LOAD_COUNT1, 0xffffffff);
++
++	/* auto reload & enable the timer */
++	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_CONTROL_REG, TIMER_EN);
++}
++
++void sgrf_init(void)
++{
++	/* config all slave as ns for now */
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(0), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(1), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(2), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(3), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(4), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(5), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(6), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(7), 0xffff0000);
++	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(8), 0xffff0000);
++
++	mmio_write_32(DDRSGRF_BASE + FIREWALL_DDR_FW_DDR_CON_REG, 0xffff0000);
++}
+diff --git a/plat/rockchip/rk3568/drivers/secure/secure.h b/plat/rockchip/rk3568/drivers/secure/secure.h
+new file mode 100644
+index 000000000..736e82629
+--- /dev/null
++++ b/plat/rockchip/rk3568/drivers/secure/secure.h
+@@ -0,0 +1,17 @@
++/*
++ * Copyright (c) 2024-2026, Rockchip, Inc. All rights reserved.
++ *
++ * SPDX-License-Identifier: BSD-3-Clause
++ */
++
++#ifndef SECURE_H
++#define SECURE_H
++
++#define SGRF_FIREWALL_SLV_CON(i)	(0x240 + i * 4)
++
++#define FIREWALL_DDR_FW_DDR_CON_REG	0x80
++
++void secure_timer_init(void);
++void sgrf_init(void);
++
++#endif /* SECURE_H */
+diff --git a/plat/rockchip/rk3568/drivers/soc/soc.c b/plat/rockchip/rk3568/drivers/soc/soc.c
+index fb604628f..c8ca2019e 100644
+--- a/plat/rockchip/rk3568/drivers/soc/soc.c
++++ b/plat/rockchip/rk3568/drivers/soc/soc.c
+@@ -11,6 +11,7 @@
+ 
+ #include <plat_private.h>
+ #include <rk3568_clk.h>
++#include <secure.h>
+ #include <soc.h>
+ 
+ const mmap_region_t plat_rk_mmap[] = {
+@@ -34,31 +35,6 @@ const unsigned char rockchip_power_domain_tree_desc[] = {
+ 	PLATFORM_CLUSTER0_CORE_COUNT,
+ };
+ 
+-static void secure_timer_init(void)
+-{
+-	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_CONTROL_REG, TIMER_DIS);
+-	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_LOAD_COUNT0, 0xffffffff);
+-	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_LOAD_COUNT1, 0xffffffff);
+-
+-	/* auto reload & enable the timer */
+-	mmio_write_32(STIMER0_CHN_BASE(1) + TIMER_CONTROL_REG, TIMER_EN);
+-}
+-
+-static void sgrf_init(void)
+-{
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(0), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(1), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(2), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(3), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(4), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(5), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(6), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(7), 0xffff0000);
+-	mmio_write_32(SGRF_BASE + SGRF_FIREWALL_SLV_CON(8), 0xffff0000);
+-
+-	mmio_write_32(DDRSGRF_BASE + FIREWALL_DDR_FW_DDR_CON_REG, 0xffff0000);
+-}
+-
+ static void set_pll_slow_mode(uint32_t clk_pll)
+ {
+ 	mmio_write_32(CRU_BASE + CRU_MODE_CON00, 0x03 << (16 + clk_pll * 2));
+diff --git a/plat/rockchip/rk3568/drivers/soc/soc.h b/plat/rockchip/rk3568/drivers/soc/soc.h
+index 41a2586a3..4399c809d 100644
+--- a/plat/rockchip/rk3568/drivers/soc/soc.h
++++ b/plat/rockchip/rk3568/drivers/soc/soc.h
+@@ -1,5 +1,5 @@
+ /*
+- * Copyright (c) 2023, ARM Limited and Contributors. All rights reserved.
++ * Copyright (c) 2023-2026, ARM Limited and Contributors. All rights reserved.
+  *
+  * SPDX-License-Identifier: BSD-3-Clause
+  */
+@@ -23,9 +23,6 @@
+ #define CRU_SOFTRSTS_CON(n)		(CRU_SOFTRST_CON + ((n) * 4))
+ #define CRU_SOFTRSTS_CON_CNT		26
+ #define GRF_DDR_CON3			0x000c
+-#define SGRF_FIREWALL_SLV_CON(i)	(0x240 + i * 4)
+-
+-#define FIREWALL_DDR_FW_DDR_CON_REG	0x80
+ 
+  /* low 32 bits */
+ #define TIMER_LOAD_COUNT0		0x00
+diff --git a/plat/rockchip/rk3568/platform.mk b/plat/rockchip/rk3568/platform.mk
+index 1f8a80e51..028171096 100644
+--- a/plat/rockchip/rk3568/platform.mk
++++ b/plat/rockchip/rk3568/platform.mk
+@@ -46,6 +46,7 @@ PLAT_INCLUDES		:=	-Iinclude/bl31					\
+ 				-I${RK_PLAT_SOC}/drivers/pmu/			\
+ 				-I${RK_PLAT_SOC}/drivers/soc/			\
+ 				-I${RK_PLAT_SOC}/drivers/scmi/			\
++				-I${RK_PLAT_SOC}/drivers/secure/		\
+ 				-I${RK_PLAT_SOC}/include/
+ 
+ RK_GIC_SOURCES		:=	${GICV3_SOURCES}				\
+@@ -88,6 +89,7 @@ BL31_SOURCES		+=	${RK_GIC_SOURCES}				\
+ 				${RK_PLAT_COMMON}/scmi/scmi_rstd.c		\
+ 				${RK_PLAT_SOC}/drivers/otp/otp.c		\
+ 				${RK_PLAT_SOC}/drivers/scmi/rk3568_clk.c	\
++				${RK_PLAT_SOC}/drivers/secure/secure.c		\
+ 				${RK_PLAT_SOC}/drivers/soc/soc.c		\
+ 				${RK_PLAT_SOC}/drivers/pmu/pmu.c		\
+ 				${RK_PLAT_SOC}/plat_sip_calls.c
+-- 
+2.52.0

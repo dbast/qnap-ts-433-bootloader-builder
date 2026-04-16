@@ -5,8 +5,8 @@
 [submodule "u-boot"]
 	path = u-boot
 	url = git@github.com:u-boot/u-boot.git
-	branch = v2026.01
+	branch = v2026.04
 [submodule "trusted-firmware-a"]
 	path = trusted-firmware-a
 	url = https://github.com/TrustedFirmware-A/trusted-firmware-a
-	branch = v2.14.1
+	branch = lts-v2.14.1
