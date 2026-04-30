@@ -58,7 +58,9 @@ spl-loader:
 
 patch-tf-a:
 	cd trusted-firmware-a && \
-	git apply ../0001-Set-baudrate-to-115200.patch
+	git apply ../0001-Set-baudrate-to-115200.patch && \
+	git apply ../0002-feat-rk3568-move-existing-secure-init-to-separate-files.patch && \
+	git apply ../0003-feat-rk3568-add-early-cpu-reset-mechanism-to-enable-crypto-function.patch
 
 build-bl31:
 	docker run --rm \
