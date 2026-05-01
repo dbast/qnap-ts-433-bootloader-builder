@@ -9,4 +9,4 @@
 [submodule "trusted-firmware-a"]
 	path = trusted-firmware-a
 	url = https://github.com/TrustedFirmware-A/trusted-firmware-a
-	branch = v2.14.1
+	branch = lts-v2.14.2
