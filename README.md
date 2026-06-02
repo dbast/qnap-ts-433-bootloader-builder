@@ -32,7 +32,7 @@ The result is a `u-boot-rockchip.bin` + updated spl loader to flash the TS-433 e
 ```sh
 git clone git@github.com:dbast/qnap-ts-433-bootloader-builder.git
 cd qnap-ts-433-bootloader-builder
-make submodules enable-binfmt build-image build-u-boot patch-rkbin spl-loader
+make submodules enable-binfmt patch-rkbin spl-loader build-image build-bl31 build-u-boot-tf-a
 ```
 
 ### Remote build
