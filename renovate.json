@@ -4,8 +4,20 @@
     "config:recommended",
     "docker:pinDigests",
     "helpers:pinGitHubActionDigestsToSemver",
-    "customManagers:githubActionsVersions",
-    "customManagers:makefileVersions"
+    "customManagers:githubActionsVersions"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Update pinned Docker image references in Makefiles",
+      "managerFilePatterns": [
+        "/^Makefile$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-.]+?) depName=(?<depName>[^\\s]+?)(?: versioning=(?<versioning>[^\\s]+?))?\\s+RKBIN_TOOLS_IMAGE\\s*:?=\\s*[^:\\s]+:(?<currentValue>[^@\\s]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\\s"
+      ],
+      "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}}{{#if versioning}} versioning={{{versioning}}}{{/if}}\nRKBIN_TOOLS_IMAGE := {{{depName}}}:{{{newValue}}}{{#if newDigest}}@{{{newDigest}}}{{/if}}\n"
+    }
   ],
   "git-submodules": {
     "enabled": true
