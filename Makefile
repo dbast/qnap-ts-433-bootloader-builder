@@ -15,6 +15,7 @@ ARTIFACTS_DIR := artifacts
 # set SOURCE_DATE_EPOCH for reproducible builds, see
 # https://docs.u-boot.org/en/stable/build/reproducible.html
 SOURCE_DATE_EPOCH := $(shell git log -1 --format=%ct)
+BUILD_TAG := $(shell git rev-parse --short HEAD)
 
 DATE_CMD := $(shell which gdate 2>/dev/null || which date)
 ATF_BUILD_TIMESTAMP := $(strip $(shell TZ=UTC $(DATE_CMD) -d "@$(SOURCE_DATE_EPOCH)" +'"%H:%M:%S, %b %d %Y"'))
@@ -81,7 +82,7 @@ build-u-boot:
 	    export BL31=../$(RKBIN_DIR)/bin/rk35/rk3568_bl31_v1.45.elf && \
 	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.23.bin && \
 	    make qnap-ts433-rk3568_defconfig && \
-	    make && \
+	    make BUILD_TAG=$(BUILD_TAG) && \
 	    sha256sum u-boot-rockchip.bin | tee u-boot-rockchip.bin.sha256 \
 	  '
 	mkdir -p $(ARTIFACTS_DIR)
@@ -99,7 +100,7 @@ build-u-boot-tf-a:
 	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.23.bin && \
 	    make qnap-ts433-rk3568_defconfig && \
 	    scripts/kconfig/merge_config.sh .config ../u-boot-upstream-tf-a.config && \
-	    make && \
+	    make BUILD_TAG=$(BUILD_TAG) && \
 	    sha256sum u-boot-rockchip.bin | tee u-boot-rockchip.bin.sha256 \
 	  '
 	mkdir -p $(ARTIFACTS_DIR)
