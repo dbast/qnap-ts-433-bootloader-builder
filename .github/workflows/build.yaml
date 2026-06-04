@@ -10,7 +10,11 @@ on:
 name: Build
 
 permissions:
-  contents: write
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
@@ -23,36 +27,84 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: true
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+      - name: Initialize build log
+        run: |
+          mkdir -p artifacts
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
+          {
+            echo "Repository: $GITHUB_REPOSITORY"
+            echo "Ref: $GITHUB_REF"
+            echo "SHA: $GITHUB_SHA"
+            echo "Workflow: $GITHUB_WORKFLOW"
+            echo "Run: $GITHUB_RUN_ID"
+            echo "Runner OS: $RUNNER_OS"
+            echo "Runner Arch: $RUNNER_ARCH"
+            echo "Runner image OS: ${ImageOS:-}"
+            echo "Runner image version: ${ImageVersion:-}"
+            echo "Source date epoch: $SOURCE_DATE_EPOCH"
+            echo
+            git submodule status --recursive
+          } > artifacts/BUILDLOG.txt
       - name: Enable binfmt
         run: |
-          make enable-binfmt
+          make enable-binfmt 2>&1 | tee -a artifacts/BUILDLOG.txt
       - name: Patch rkbin
         run: |
-          make patch-rkbin
+          make patch-rkbin 2>&1 | tee -a artifacts/BUILDLOG.txt
       - name: Create SPL Loader
         run: |
-          make spl-loader
+          make spl-loader 2>&1 | tee -a artifacts/BUILDLOG.txt
       - name: Create container
         run: |
-          make build-image
+          make build-image 2>&1 | tee -a artifacts/BUILDLOG.txt
       - name: Build tf-a
         run: |
-          make build-bl31
+          make build-bl31 2>&1 | tee -a artifacts/BUILDLOG.txt
       - name: Build U-Boot
         run: |
-          make build-u-boot-tf-a
+          make build-u-boot-tf-a 2>&1 | tee -a artifacts/BUILDLOG.txt
+      - name: Collect licenses
+        run: |
+          make licenses 2>&1 | tee -a artifacts/BUILDLOG.txt
+      - name: Package bundle
+        run: |
+          make package VERSION="${{ github.event_name == 'release' && github.ref_name || github.sha }}"
       - name: Store result
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: artifacts
-          path: artifacts/**
+          path: |
+            artifacts/**
+            dist/**
           retention-days: 2
-      - name: Upload sha256 sums to release
-        if: github.event_name == 'release'
+
+  release:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Download result
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: artifacts
+      - name: Upload bundle to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: >
           gh release upload
           --clobber "${{ github.ref_name }}"
           --repo "${{ github.repository }}"
-          artifacts/*.sha256
+          dist/*.zip dist/*.zip.sha256
+      - name: Sign release bundle
+        uses: sigstore/gh-action-sigstore-python@04cffa1d795717b140764e8b640de88853c92acc # v3.3.0
+        with:
+          inputs: dist/*.zip
+          release-signing-artifacts: true
+          verify: true
+          verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/build.yaml@${{ github.ref }}
+          verify-oidc-issuer: https://token.actions.githubusercontent.com
