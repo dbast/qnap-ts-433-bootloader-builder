@@ -11,9 +11,7 @@ For background see:
 - Official U-Boot TS-433 board documentation:
   https://docs.u-boot.org/en/stable/board/qnap/ts433.html
 
-This project focuses solely on providing a reproducible builder for a TS-433-specific U-Boot image, reusing that upstream work.
-
-It is a helper project to build a Rockchip U-Boot image for the QNAP TS-433 (RK3568) in a reproducible way, using:
+This project focuses solely on providing a reproducible builder for a TS-433-specific Rockchip U-Boot image, reusing that upstream work and using:
 
 - U-Boot (GPL-2.0) as a submodule
 - Trusted Firmware-A (BSD-3-Clause) as a submodule
@@ -21,9 +19,9 @@ It is a helper project to build a Rockchip U-Boot image for the QNAP TS-433 (RK3
 - A pinned Debian-based Docker build environment
 
 > [!NOTE]
-> This project intentionally uses newer rkbin DDR training firmware blobs than those referenced in the official U-Boot TS-433 documentation. It also integrate a self-built Trusted Firmware-A (BL31) instead of the proprietary rkbin version.
+> This project intentionally uses newer rkbin DDR training firmware blobs than those referenced in the official U-Boot TS-433 documentation. It also integrates a self-built Trusted Firmware-A (BL31) instead of the proprietary rkbin version.
 
-The result is a `u-boot-rockchip.bin` + updated spl loader to flash the TS-433 eMMC via `rkdeveloptool`.
+The result is a `u-boot-rockchip.bin` plus an updated SPL loader to flash the TS-433 eMMC via `rkdeveloptool`.
 
 ## Usage
 
@@ -37,7 +35,7 @@ make submodules enable-binfmt patch-rkbin spl-loader build-image build-bl31 buil
 
 ### Remote build
 
-Fork the repo and trigger a build via “workflow dispatch” on any branch or tag (i.e. the button next to the build workflow in the Actions tab of the forked repo). The build will upload the resulting `u-boot-rockchip.bin` and updated spl loader as workflow artifacts that is valid for 2 days.
+Fork the repo and trigger a build via “workflow dispatch” on any branch or tag (i.e. the button next to the build workflow in the Actions tab of the forked repo). The build will upload the resulting `u-boot-rockchip.bin` and updated SPL loader as workflow artifacts that are valid for 2 days.
 
 ## Flashing to TS-433
 
@@ -56,7 +54,7 @@ See above links for the maskrom jumper procedure.
 
 This project aims for reproducible U-Boot and Trusted Firmware builds via:
 
-- Pinning the entire build environment via Dockerfile, using a pinned base image and date based `snapshot.debian.org` URLs
+- Pinning the entire build environment via Dockerfile, using a pinned base image and date-based `snapshot.debian.org` URLs
 - Pinning `u-boot` / `trusted-firmware-a` / `rkbin` submodules to specific commits
 - Setting `SOURCE_DATE_EPOCH` from the last git commit timestamp (`git log -1 --format=%ct`) to fixate timestamps used during the U-Boot and Trusted Firmware builds (see [Reproducible builds](https://docs.u-boot.org/en/stable/build/reproducible.html))
 
@@ -68,7 +66,7 @@ For end-to-end OS installation guides on the TS-433 with different distributions
 - Gentoo: https://wiki.gentoo.org/wiki/QNAP_TS-433
 - NixOS: https://github.com/dbast/nix-config
 
-Or follow the instructions in the [debian](debian/) folder for a ssh based Debian Trixie Network Installer.
+Or follow the instructions in the [debian](debian/) folder for an SSH-based Debian Trixie network installer.
 
 ## TODO
 
