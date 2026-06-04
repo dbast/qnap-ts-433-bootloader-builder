@@ -14,6 +14,12 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: check-merge-conflict
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 22f0422809455ec89ffdcf5a00170ba816e42ddb  # frozen: v0.15.16
+    hooks:
+      - id: ruff-check
+        args: [--fix, --show-fixes]
+      - id: ruff-format
   - repo: https://github.com/reteps/dockerfmt
     rev: bf2867e6b3029c0cd40ba921a7f0b6547b9b8fe2  # frozen: v0.5.2
     hooks:

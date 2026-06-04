@@ -34,45 +34,27 @@ jobs:
           submodules: true
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
-      - name: Initialize build log
-        run: |
-          mkdir -p artifacts
-          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)
-          {
-            echo "Repository: $GITHUB_REPOSITORY"
-            echo "Ref: $GITHUB_REF"
-            echo "SHA: $GITHUB_SHA"
-            echo "Workflow: $GITHUB_WORKFLOW"
-            echo "Run: $GITHUB_RUN_ID"
-            echo "Runner OS: $RUNNER_OS"
-            echo "Runner Arch: $RUNNER_ARCH"
-            echo "Runner image OS: ${ImageOS:-}"
-            echo "Runner image version: ${ImageVersion:-}"
-            echo "Source date epoch: $SOURCE_DATE_EPOCH"
-            echo
-            git submodule status --recursive
-          } > artifacts/BUILDLOG.txt
       - name: Enable binfmt
         run: |
-          make enable-binfmt 2>&1 | tee -a artifacts/BUILDLOG.txt
+          make enable-binfmt
       - name: Patch rkbin
         run: |
-          make patch-rkbin 2>&1 | tee -a artifacts/BUILDLOG.txt
+          make patch-rkbin
       - name: Create SPL Loader
         run: |
-          make spl-loader 2>&1 | tee -a artifacts/BUILDLOG.txt
+          make spl-loader
       - name: Create container
         run: |
-          make build-image 2>&1 | tee -a artifacts/BUILDLOG.txt
+          make build-image
       - name: Build tf-a
         run: |
-          make build-bl31 2>&1 | tee -a artifacts/BUILDLOG.txt
+          make build-bl31
       - name: Build U-Boot
         run: |
-          make build-u-boot-tf-a 2>&1 | tee -a artifacts/BUILDLOG.txt
+          make build-u-boot-tf-a
       - name: Collect licenses
         run: |
-          make licenses 2>&1 | tee -a artifacts/BUILDLOG.txt
+          make licenses
       - name: Package bundle
         run: |
           make package VERSION="${{ github.event_name == 'release' && github.ref_name || github.sha }}"

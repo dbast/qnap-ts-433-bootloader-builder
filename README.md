@@ -70,7 +70,7 @@ Or follow the instructions in the [debian](debian/) folder for an SSH-based Debi
 
 ## TODO
 
-Integrate an open-source DDR training implementation once the community reverse-engineering effort for RK3568 DRAM initialization has matured (see CyReVolt’s ongoing work: https://mastodon.social/@CyReVolt/114762696953789988). This would allow replacing the remaining rkbin DDR firmware blobs and complete the transition to a fully open boot chain.
+Integrate an open-source DDR training implementation once the community reverse-engineering effort for RK3568 DRAM initialization has matured (see CyReVolt’s ongoing [work](https://mastodon.social/@CyReVolt/114762696953789988)). This would allow replacing the remaining rkbin DDR firmware blobs and complete the transition to a fully open boot chain.
 
 ## Warranty
 
