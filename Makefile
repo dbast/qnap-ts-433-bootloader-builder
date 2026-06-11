@@ -9,7 +9,7 @@ ATF_BL31 := $(ATF_BUILD_DIR)/bl31/bl31.elf
 
 DOCKER_IMAGE := qnap-ts433-uboot-builder:latest
 # renovate: datasource=docker depName=debian versioning=regex:^trixie-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})-slim$
-RKBIN_TOOLS_IMAGE := debian:trixie-20260518-slim@sha256:b6e2a152f22a40ff69d92cb397223c906017e1391a73c952b588e51af8883bf8
+RKBIN_TOOLS_IMAGE := debian:trixie-20260610-slim@sha256:eaa4b3f652544c3af35658e9315adab7858b51917b890d5f4b208e5575284e6d
 
 ARTIFACTS_DIR := artifacts
 LICENSES_DIR := $(ARTIFACTS_DIR)/LICENSES
