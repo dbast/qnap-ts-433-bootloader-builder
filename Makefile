@@ -67,7 +67,7 @@ spl-loader:
 	  bash -exc '\
 	    apt-get update && \
 		apt-get install -y --no-install-recommends python3 && \
-	    tools/ddrbin_tool.py rk3568 tools/ddrbin_param.txt bin/rk35/rk3568_ddr_1560MHz_v1.23.bin && \
+	    tools/ddrbin_tool.py rk3568 tools/ddrbin_param.txt bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
 	    tools/boot_merger RKBOOT/RK3568MINIALL.ini && \
 	    python3 ../normalize-rockchip-loader.py rk356x_spl_loader_v1.*.bin && \
 		sha256sum rk356x_spl_loader_v1.*.bin | tee rk356x_spl_loader_v1.sha256 && \
@@ -97,8 +97,8 @@ build-u-boot:
 	  $(DOCKER_IMAGE) \
 	  bash -exc '\
 	    cd $(UBOOT_DIR) && \
-	    export BL31=../$(RKBIN_DIR)/bin/rk35/rk3568_bl31_v1.45.elf && \
-	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.23.bin && \
+	    export BL31=../$(RKBIN_DIR)/bin/rk35/rk3568_bl31_v1.46.elf && \
+	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
 	    make qnap-ts433-rk3568_defconfig && \
 	    make BUILD_TAG=$(BUILD_TAG) && \
 	    sha256sum u-boot-rockchip.bin | tee u-boot-rockchip.bin.sha256 \
@@ -115,7 +115,7 @@ build-u-boot-tf-a:
 	  bash -exc '\
 	    cd $(UBOOT_DIR) && \
 	    export BL31=../$(ATF_BL31) && \
-	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.23.bin && \
+	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
 	    make qnap-ts433-rk3568_defconfig && \
 	    scripts/kconfig/merge_config.sh .config ../u-boot-upstream-tf-a.config && \
 	    make BUILD_TAG=$(BUILD_TAG) && \
