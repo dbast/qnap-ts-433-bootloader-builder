@@ -97,7 +97,7 @@ build-u-boot:
 	  $(DOCKER_IMAGE) \
 	  bash -exc '\
 	    cd $(UBOOT_DIR) && \
-	    export BL31=../$(RKBIN_DIR)/bin/rk35/rk3568_bl31_v1.45.elf && \
+	    export BL31=../$(RKBIN_DIR)/bin/rk35/rk3568_bl31_v1.46.elf && \
 	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
 	    make qnap-ts433-rk3568_defconfig && \
 	    make BUILD_TAG=$(BUILD_TAG) && \
