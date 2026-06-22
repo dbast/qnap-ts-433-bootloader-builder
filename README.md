@@ -72,6 +72,10 @@ Or follow the instructions in the [debian](debian/) folder for an SSH-based Debi
 
 Integrate an open-source DDR training implementation once the community reverse-engineering effort for RK3568 DRAM initialization has matured (see CyReVolt’s ongoing [work](https://mastodon.social/@CyReVolt/114762696953789988)). This would allow replacing the remaining rkbin DDR firmware blobs and complete the transition to a fully open boot chain.
 
+## Related devices
+
+Related TSx33 models may also be usable to some extent: the TS-233 can typically boot this TS-433 U-Boot image if Linux is explicitly passed an up-to-date TS-233 device tree, while TS-133 support should be treated as experimental unless validated on that hardware.
+
 ## Warranty
 
 This project is provided as-is without any warranty. Use at your own risk.
