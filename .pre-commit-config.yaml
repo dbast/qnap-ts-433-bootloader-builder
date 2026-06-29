@@ -21,7 +21,7 @@ repos:
         args: [--fix, --show-fixes]
       - id: ruff-format
   - repo: https://github.com/reteps/dockerfmt
-    rev: bf2867e6b3029c0cd40ba921a7f0b6547b9b8fe2  # frozen: v0.5.2
+    rev: 5c9b576cff2b0f3c323785ed9aa86838d1ae2228  # frozen: v0.5.4
     hooks:
       - id: dockerfmt
         args: [--newline, --write]
