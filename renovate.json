@@ -27,6 +27,15 @@
   },
   "packageRules": [
     {
+      "matchManagers": [
+        "git-submodules"
+      ],
+      "matchPackageNames": [
+        "https://github.com/u-boot/u-boot.git"
+      ],
+      "versioning": "regex:^v(?<major>\\d{4})\\.(?<minor>\\d{2})$"
+    },
+    {
       "matchDatasources": [
         "docker"
       ],
