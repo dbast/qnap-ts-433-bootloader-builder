@@ -5,7 +5,6 @@ import struct
 import sys
 from pathlib import Path
 
-
 # Rockchip rkbin's tools/boot_merger is a statically linked binary. It embeds
 # the current wall-clock time in the loader header, so libfaketime cannot make
 # its output reproducible. Public Rockchip boot_merger.c shows this field as
