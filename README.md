@@ -2,7 +2,7 @@
 
 ## Prior work and acknowledgements
 
-This repository is a small helper on top of excellent upstream work. In particular, [Heiko Stübner](https://github.com/mmind) upstreamed support for the QNAP TS-433 (RK3568) in both the Linux kernel and U-Boot, which makes it possible to use this device with mainline software instead of vendor firmware.
+This repository is a small helper on top of excellent upstream work. In particular, [Heiko Stübner](https://github.com/mmind) upstreamed support for the RK3568-based QNAP TS-233 and TS-433 in the Linux kernel and U-Boot, which makes it possible to use these devices with mainline software instead of vendor firmware.
 
 For background see:
 
@@ -11,7 +11,7 @@ For background see:
 - Official U-Boot TS-433 board documentation:
   https://docs.u-boot.org/en/stable/board/qnap/ts433.html
 
-This project focuses solely on providing a reproducible builder for a TS-433-specific Rockchip U-Boot image, reusing that upstream work and using:
+This project provides reproducible, model-specific Rockchip U-Boot images for the QNAP TS-233 and TS-433, reusing that upstream work and using:
 
 - U-Boot (GPL-2.0) as a submodule
 - Trusted Firmware-A (BSD-3-Clause) as a submodule
@@ -21,7 +21,9 @@ This project focuses solely on providing a reproducible builder for a TS-433-spe
 > [!NOTE]
 > This project intentionally uses newer rkbin DDR training firmware blobs than those referenced in the official U-Boot TS-433 documentation. It also integrates a self-built Trusted Firmware-A (BL31) instead of the proprietary rkbin version.
 
-The result is a `u-boot-rockchip.bin` plus an updated SPL loader to flash the TS-433 eMMC via `rkdeveloptool`.
+The result is a `u-boot-rockchip-ts233.bin`, a `u-boot-rockchip-ts433.bin`, and a shared updated SPL loader to flash the eMMC via `rkdeveloptool`.
+
+U-Boot provides a shared `qnap-ts433-rk3568_defconfig`; the builder selects the model-specific U-Boot and Linux device trees for each output image.
 
 ## Usage
 
@@ -35,16 +37,17 @@ make submodules enable-binfmt patch-rkbin spl-loader build-image build-bl31 buil
 
 ### Remote build
 
-Fork the repo and trigger a build via “workflow dispatch” on any branch or tag (i.e. the button next to the build workflow in the Actions tab of the forked repo). The build will upload the resulting `u-boot-rockchip.bin` and updated SPL loader as workflow artifacts that are valid for 2 days.
+Fork the repo and trigger a build via “workflow dispatch” on any branch or tag (i.e. the button next to the build workflow in the Actions tab of the forked repo). The build will upload both model-specific U-Boot images and the updated SPL loader as workflow artifacts that are valid for 2 days.
 
-## Flashing to TS-433
+## Flashing
 
-With the TS-433 in maskrom mode and `rkdeveloptool` installed on a host:
+With the NAS in maskrom mode and `rkdeveloptool` installed on a host, select its model and flash the matching image:
 
 ```sh
 cd artifacts/
+MODEL=ts433  # or ts233
 rkdeveloptool db rk356x_spl_loader_v1.*.bin  # USB/maskrom loader (from rkbin)
-rkdeveloptool wl 64 u-boot-rockchip.bin      # write U-Boot to eMMC at sector 64
+rkdeveloptool wl 64 "u-boot-rockchip-${MODEL}.bin"  # write U-Boot to eMMC at sector 64
 rkdeveloptool rd                             # reset
 ```
 
@@ -58,7 +61,7 @@ On a running system, read the U-Boot version from the device tree:
 cat /proc/device-tree/chosen/u-boot,version; echo
 ```
 
-The output includes the U-Boot release and the full builder commit, for example:
+The output includes the U-Boot release, model, and full builder commit, for example:
 
 ```text
 2026.07-qnap-ts433-b0e73af694e868cc164153dce4ee24f93d7ec4d3d
@@ -74,7 +77,7 @@ This project aims for reproducible U-Boot and Trusted Firmware builds via:
 
 ## Distro-specific documentation
 
-For end-to-end OS installation guides on the TS-433 with different distributions, see also:
+For end-to-end TS-433 OS installation guides, see also:
 
 - Debian: https://wiki.debian.org/InstallingDebianOn/Qnap/TS-433
 - Gentoo: https://wiki.gentoo.org/wiki/QNAP_TS-433
@@ -88,7 +91,7 @@ Integrate an open-source DDR training implementation once the community reverse-
 
 ## Related devices
 
-Related TSx33 models may also be usable to some extent: the TS-233 can typically boot this TS-433 U-Boot image if Linux is explicitly passed an up-to-date TS-233 device tree, while TS-133 support should be treated as experimental unless validated on that hardware.
+The TS-133 is not currently built because its RK3566 SoC requires a different DDR/TPL binary and maskrom loader.
 
 ## Warranty
 

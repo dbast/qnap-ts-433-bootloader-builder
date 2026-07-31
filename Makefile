@@ -6,8 +6,9 @@ ATF_DIR := trusted-firmware-a
 ATF_PLAT := rk3568
 ATF_BUILD_DIR := $(ATF_DIR)/build/$(ATF_PLAT)/release
 ATF_BL31 := $(ATF_BUILD_DIR)/bl31/bl31.elf
+QNAP_MODELS := ts233 ts433
 
-DOCKER_IMAGE := qnap-ts433-uboot-builder:latest
+DOCKER_IMAGE := qnap-ts233-ts433-uboot-builder:latest
 # renovate: datasource=docker depName=debian versioning=regex:^trixie-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})-slim$
 RKBIN_TOOLS_IMAGE := debian:trixie-20260713-slim@sha256:020c0d20b9880058cbe785a9db107156c3c75c2ac944a6aa7ab59f2add76a7bd
 
@@ -17,7 +18,7 @@ DIST_DIR := dist
 
 # Version used for naming the release bundle (override in CI, e.g. VERSION=$tag)
 VERSION ?= $(shell git describe --tags --always --dirty)
-ZIP_NAME := qnap-ts433-bootloader-$(VERSION).zip
+ZIP_NAME := qnap-ts233-ts433-bootloader-$(VERSION).zip
 ZIP_PATH := $(DIST_DIR)/$(ZIP_NAME)
 UBOOT_URL := https://github.com/u-boot/u-boot
 ATF_URL := https://github.com/TrustedFirmware-A/trusted-firmware-a
@@ -99,12 +100,20 @@ build-u-boot:
 	    cd $(UBOOT_DIR) && \
 	    export BL31=../$(RKBIN_DIR)/bin/rk35/rk3568_bl31_v1.46.elf && \
 	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
-	    make qnap-ts433-rk3568_defconfig && \
-	    make LOCALVERSION=-qnap-ts433-b$(BUILD_COMMIT) && \
-	    sha256sum u-boot-rockchip.bin | tee u-boot-rockchip.bin.sha256 \
+	    for model in $(QNAP_MODELS); do \
+	      make qnap-ts433-rk3568_defconfig && \
+	      scripts/config --set-str DEFAULT_DEVICE_TREE "rockchip/rk3568-qnap-$${model}" && \
+	      scripts/config --set-str DEFAULT_FDT_FILE "rockchip/rk3568-qnap-$${model}.dtb" && \
+	      scripts/config --set-str OF_LIST "rockchip/rk3568-qnap-$${model}" && \
+	      scripts/config --set-str SPL_OF_LIST "rockchip/rk3568-qnap-$${model}" && \
+	      make olddefconfig && \
+	      make LOCALVERSION=-qnap-$${model}-b$(BUILD_COMMIT) && \
+	      mv u-boot-rockchip.bin "u-boot-rockchip-$${model}.bin" && \
+	      sha256sum "u-boot-rockchip-$${model}.bin" | tee "u-boot-rockchip-$${model}.bin.sha256"; \
+	    done \
 	  '
 	mkdir -p $(ARTIFACTS_DIR)
-	cp $(UBOOT_DIR)/u-boot-rockchip.* $(ARTIFACTS_DIR)/
+	cp $(UBOOT_DIR)/u-boot-rockchip-*.b* $(ARTIFACTS_DIR)/
 
 build-u-boot-tf-a:
 	docker run --rm \
@@ -116,13 +125,21 @@ build-u-boot-tf-a:
 	    cd $(UBOOT_DIR) && \
 	    export BL31=../$(ATF_BL31) && \
 	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
-	    make qnap-ts433-rk3568_defconfig && \
-	    scripts/kconfig/merge_config.sh .config ../u-boot-upstream-tf-a.config && \
-	    make LOCALVERSION=-qnap-ts433-b$(BUILD_COMMIT) && \
-	    sha256sum u-boot-rockchip.bin | tee u-boot-rockchip.bin.sha256 \
+	    for model in $(QNAP_MODELS); do \
+	      make qnap-ts433-rk3568_defconfig && \
+	      scripts/kconfig/merge_config.sh .config ../u-boot-upstream-tf-a.config && \
+	      scripts/config --set-str DEFAULT_DEVICE_TREE "rockchip/rk3568-qnap-$${model}" && \
+	      scripts/config --set-str DEFAULT_FDT_FILE "rockchip/rk3568-qnap-$${model}.dtb" && \
+	      scripts/config --set-str OF_LIST "rockchip/rk3568-qnap-$${model}" && \
+	      scripts/config --set-str SPL_OF_LIST "rockchip/rk3568-qnap-$${model}" && \
+	      make olddefconfig && \
+	      make LOCALVERSION=-qnap-$${model}-b$(BUILD_COMMIT) && \
+	      mv u-boot-rockchip.bin "u-boot-rockchip-$${model}.bin" && \
+	      sha256sum "u-boot-rockchip-$${model}.bin" | tee "u-boot-rockchip-$${model}.bin.sha256"; \
+	    done \
 	  '
 	mkdir -p $(ARTIFACTS_DIR)
-	cp $(UBOOT_DIR)/u-boot-rockchip.* $(ARTIFACTS_DIR)/
+	cp $(UBOOT_DIR)/u-boot-rockchip-*.b* $(ARTIFACTS_DIR)/
 
 licenses:
 	mkdir -p $(LICENSES_DIR)
@@ -139,8 +156,8 @@ licenses:
 	atf_hash=$$($(MAKE) -s --no-print-directory nar-hash DIR=$(ATF_DIR)); \
 	rkbin_hash=$$($(MAKE) -s --no-print-directory nar-hash DIR=$(RKBIN_DIR)); \
 	{ \
-	  echo "QNAP TS-433 bootloader artifacts - licensing & source notice"; \
-	  echo "============================================================"; \
+	  echo "QNAP TS-233/TS-433 bootloader artifacts - licensing & source notice"; \
+	  echo "==================================================================="; \
 	  echo ""; \
 	  echo "Generated for builder commit $$builder_commit"; \
 	  echo "Builder source: $(BUILDER_URL)"; \
@@ -161,9 +178,9 @@ licenses:
 	  echo "License texts are in the LICENSES/ directory next to this file."; \
 	  echo ""; \
 	  echo "------------------------------------------------------------"; \
-	  echo "u-boot-rockchip.bin"; \
-	  echo "  Description : U-Boot bootloader image (embeds the Rockchip TPL"; \
-	  echo "                and the TF-A BL31 listed below)"; \
+	  echo "u-boot-rockchip-ts233.bin and u-boot-rockchip-ts433.bin"; \
+	  echo "  Description : Model-specific U-Boot bootloader images"; \
+	  echo "                (embed the Rockchip TPL and TF-A BL31 below)"; \
 	  echo "  License     : GPL-2.0-or-later (see LICENSES/u-boot-GPL-2.0.txt)"; \
 	  echo "  Source      : $(UBOOT_URL)"; \
 	  echo "  Commit      : $$uboot_commit"; \
