@@ -50,6 +50,20 @@ rkdeveloptool rd                             # reset
 
 See above links for the maskrom jumper procedure.
 
+### Checking the installed version
+
+On a running system, read the U-Boot version from the device tree:
+
+```sh
+cat /proc/device-tree/chosen/u-boot,version; echo
+```
+
+The output includes the U-Boot release and the full builder commit, for example:
+
+```text
+2026.07-qnap-ts433-b0e73af694e868cc164153dce4ee24f93d7ec4d3d
+```
+
 ## Reproducibility
 
 This project aims for reproducible U-Boot and Trusted Firmware builds via:
