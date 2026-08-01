@@ -2,10 +2,15 @@ on:
   push:
     branches:
       - main
-  release:
-    types: [published]
+    tags:
+      - '[0-9][0-9].[0-9][0-9].[0-9]*'
   pull_request:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Draft release tag to upgrade and publish
+        required: false
+        type: string
 
 name: CI
 
@@ -17,17 +22,19 @@ defaults:
     shell: bash
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  group: ${{ github.workflow }}-${{ inputs.release_tag || github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
   prek:
+    if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
   build:
+    if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     steps:
@@ -73,9 +80,9 @@ jobs:
             dist/**
           retention-days: 2
 
-  release:
-    if: github.event_name == 'release'
-    needs: build
+  draft-release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: [prek, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -86,19 +93,128 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: artifacts
-      - name: Upload bundle to release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: >
-          gh release upload
-          --clobber "${{ github.ref_name }}"
-          --repo "${{ github.repository }}"
-          dist/*.zip dist/*.zip.sha256
       - name: Sign release bundle
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
         with:
           inputs: dist/*.zip
-          release-signing-artifacts: true
+          release-signing-artifacts: false
           verify: true
           verify-cert-identity: https://github.com/${{ github.repository }}/.github/workflows/ci.yaml@${{ github.ref }}
           verify-oidc-issuer: https://token.actions.githubusercontent.com
+      - name: Install OpenTimestamps
+        run: |
+          python3 -m venv "$RUNNER_TEMP/ots"
+          "$RUNNER_TEMP/ots/bin/pip" install opentimestamps-client==0.7.2
+          echo "$RUNNER_TEMP/ots/bin" >> "$GITHUB_PATH"
+      - name: Timestamp release bundle
+        run: |
+          ots stamp dist/*.zip
+      - name: Create release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          bundles=(dist/*.zip)
+          test "${#bundles[@]}" -eq 1
+          BUNDLE=${bundles[0]##*/}
+          read -r SHA256 _ < "dist/$BUNDLE.sha256"
+          GENERATED_NOTES=$(gh api --method POST "repos/$REPOSITORY/releases/generate-notes" -f tag_name="$RELEASE_TAG" --jq .body)
+          FULL_CHANGELOG=
+          while IFS= read -r line; do
+            if [[ $line == "**Full Changelog**:"* ]]; then
+              FULL_CHANGELOG=$line
+            else
+              printf '%s\n' "$line"
+            fi
+          done <<< "$GENERATED_NOTES" > release-notes.md
+          cat >> release-notes.md <<EOF
+
+          ### Verify the download
+
+          **1. Checksum** (quick integrity check):
+
+          \`\`\`
+          sha256sum -c $BUNDLE.sha256
+          \`\`\`
+
+          **2. Sigstore identity** (proves it was built by this repo's CI; requires sigstore >= 3.0):
+
+          \`\`\`
+          sigstore verify identity \\
+            --cert-identity "https://github.com/$REPOSITORY/.github/workflows/ci.yaml@refs/tags/$RELEASE_TAG" \\
+            --cert-oidc-issuer "https://token.actions.githubusercontent.com" \\
+            $BUNDLE
+          \`\`\`
+
+          **3. OpenTimestamps** (proves the zip existed at release time, and didn't change since then):
+
+          Drop \`$BUNDLE.ots\`, then \`$BUNDLE\`, onto https://opentimestamps.org or verify locally:
+
+          \`\`\`
+          ots verify $BUNDLE.ots
+          \`\`\`
+
+          VirusTotal file scan:
+          [![VirusTotal file scan](https://badges.cssnr.com/vt/id/$SHA256)](https://www.virustotal.com/gui/file/$SHA256)
+
+          On a device booted into Linux, read the installed version:
+
+          \`\`\`
+          cat /proc/device-tree/chosen/u-boot,version; echo
+          \`\`\`
+
+          $FULL_CHANGELOG
+          EOF
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release edit "$RELEASE_TAG" --repo "${{ github.repository }}" --notes-file release-notes.md
+          else
+            gh release create "$RELEASE_TAG" --repo "${{ github.repository }}" --verify-tag --title "$RELEASE_TAG" --notes-file release-notes.md --draft
+          fi
+      - name: Upload draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: >
+          gh release upload
+          --clobber "$RELEASE_TAG"
+          --repo "${{ github.repository }}"
+          dist/*.zip dist/*.zip.sha256 dist/*.zip.sigstore.json dist/*.zip.ots
+
+  finalize-release:
+    if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
+    steps:
+      - name: Check draft release
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" --json isDraft --jq .isDraft)" = true
+      - name: Download timestamp
+        run: |
+          mkdir release
+          gh release download "$RELEASE_TAG" --repo "${{ github.repository }}" --pattern '*.zip' --pattern '*.ots' --dir release
+      - name: Install OpenTimestamps
+        run: |
+          python3 -m venv "$RUNNER_TEMP/ots"
+          "$RUNNER_TEMP/ots/bin/pip" install opentimestamps-client==0.7.2
+          echo "$RUNNER_TEMP/ots/bin" >> "$GITHUB_PATH"
+      - name: Upgrade and verify timestamp
+        run: |
+          ots upgrade release/*.ots
+          ots verify release/*.ots
+      - name: Upload upgraded timestamp
+        run: |
+          gh release upload "$RELEASE_TAG" --repo "${{ github.repository }}" --clobber release/*.ots
+      - name: Publish release
+        run: |
+          gh release edit "$RELEASE_TAG" --repo "${{ github.repository }}" --draft=false
