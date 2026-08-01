@@ -32,7 +32,7 @@ U-Boot provides a shared `qnap-ts433-rk3568_defconfig`; the builder selects the 
 ```sh
 git clone git@github.com:dbast/qnap-ts-433-bootloader-builder.git
 cd qnap-ts-433-bootloader-builder
-make submodules enable-binfmt patch-rkbin spl-loader build-image build-bl31 build-u-boot-tf-a
+make submodules enable-binfmt patch-rkbin spl-loader unpatch-rkbin build-image build-bl31 build-u-boot-tf-a
 ```
 
 ### Remote build
@@ -61,11 +61,18 @@ On a running system, read the U-Boot version from the device tree:
 cat /proc/device-tree/chosen/u-boot,version; echo
 ```
 
-The output includes the U-Boot release, model, and full builder commit, for example:
+The output combines the upstream U-Boot release with the builder release tag:
 
 ```text
-2026.07-qnap-ts433-b0e73af694e868cc164153dce4ee24f93d7ec4d3d
+2026.07-builder-26.07.0
 ```
+
+Development builds include the commit count and abbreviated commit, for example
+`2026.07-builder-26.07.0-8-gdba09f0`. Builds with uncommitted builder changes
+also end in `-dirty`.
+
+The release bundle uses the same builder version, for example
+`qnap-ts233-ts433-bootloader-26.07.0.zip`.
 
 ## Reproducibility
 

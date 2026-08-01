@@ -15,8 +15,12 @@ RKBIN_TOOLS_IMAGE := debian:trixie-20260713-slim@sha256:020c0d20b9880058cbe785a9
 ARTIFACTS_DIR := artifacts
 LICENSES_DIR := $(ARTIFACTS_DIR)/LICENSES
 DIST_DIR := dist
+BUILD_DIR := .build
+DDR_BIN := rk3568_ddr_1560MHz_v1.25.bin
+DDR_BIN_PATH := bin/rk35/$(DDR_BIN)
+STAGED_DDR_BIN := $(BUILD_DIR)/$(DDR_BIN)
 
-# Version used for naming the release bundle (override in CI, e.g. VERSION=$tag)
+# Version embedded in U-Boot and used for naming the release bundle
 VERSION ?= $(shell git describe --tags --always --dirty)
 ZIP_NAME := qnap-ts233-ts433-bootloader-$(VERSION).zip
 ZIP_PATH := $(DIST_DIR)/$(ZIP_NAME)
@@ -28,7 +32,6 @@ BUILDER_URL := https://github.com/dbast/qnap-ts-433-bootloader-builder
 # set SOURCE_DATE_EPOCH for reproducible builds, see
 # https://docs.u-boot.org/en/stable/build/reproducible.html
 SOURCE_DATE_EPOCH := $(shell git log -1 --format=%ct)
-BUILD_COMMIT := $(shell git rev-parse HEAD)
 
 DATE_CMD := $(shell which gdate 2>/dev/null || which date)
 ATF_BUILD_TIMESTAMP := $(strip $(shell TZ=UTC $(DATE_CMD) -d "@$(SOURCE_DATE_EPOCH)" +'"%H:%M:%S, %b %d %Y"'))
@@ -54,9 +57,15 @@ patch-rkbin:
 	git apply ../ddrbin_param.patch && \
 	git apply ../0001-Enable-setting-current_time-from-env-variable.patch
 
+unpatch-rkbin:
+	cd $(RKBIN_DIR) && \
+	git apply --reverse ../0001-Enable-setting-current_time-from-env-variable.patch && \
+	git apply --reverse ../ddrbin_param.patch && \
+	git restore -- $(DDR_BIN_PATH)
+
 spl-loader:
 	# boot_merger = x86_64 elf linux binary
-	mkdir -p $(ARTIFACTS_DIR)
+	mkdir -p $(ARTIFACTS_DIR) $(BUILD_DIR)
 	docker run --rm \
 	  --platform=linux/amd64 \
 	  -v $$PWD:/rkbin-src \
@@ -68,12 +77,13 @@ spl-loader:
 	  bash -exc '\
 	    apt-get update && \
 		apt-get install -y --no-install-recommends python3 && \
-	    tools/ddrbin_tool.py rk3568 tools/ddrbin_param.txt bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
+	    tools/ddrbin_tool.py rk3568 tools/ddrbin_param.txt $(DDR_BIN_PATH) && \
 	    tools/boot_merger RKBOOT/RK3568MINIALL.ini && \
 	    python3 ../normalize-rockchip-loader.py rk356x_spl_loader_v1.*.bin && \
 		sha256sum rk356x_spl_loader_v1.*.bin | tee rk356x_spl_loader_v1.sha256 && \
+	    cp $(DDR_BIN_PATH) /rkbin-src/$(STAGED_DDR_BIN) && \
 	    cp rk356x_spl_loader_v1.* /rkbin-src/$(ARTIFACTS_DIR)/ && \
-	    chown $$HOST_UID:$$HOST_GID /rkbin-src/$(ARTIFACTS_DIR)/rk356x_spl_loader_v1.* \
+	    chown $$HOST_UID:$$HOST_GID /rkbin-src/$(STAGED_DDR_BIN) /rkbin-src/$(ARTIFACTS_DIR)/rk356x_spl_loader_v1.* \
 	  '
 
 build-bl31:
@@ -99,7 +109,7 @@ build-u-boot:
 	  bash -exc '\
 	    cd $(UBOOT_DIR) && \
 	    export BL31=../$(RKBIN_DIR)/bin/rk35/rk3568_bl31_v1.46.elf && \
-	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
+	    export ROCKCHIP_TPL=../$(STAGED_DDR_BIN) && \
 	    for model in $(QNAP_MODELS); do \
 	      make qnap-ts433-rk3568_defconfig && \
 	      scripts/config --set-str DEFAULT_DEVICE_TREE "rockchip/rk3568-qnap-$${model}" && \
@@ -107,7 +117,7 @@ build-u-boot:
 	      scripts/config --set-str OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      scripts/config --set-str SPL_OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      make olddefconfig && \
-	      make LOCALVERSION=-qnap-$${model}-b$(BUILD_COMMIT) && \
+	      make LOCALVERSION=-builder-$(VERSION) && \
 	      mv u-boot-rockchip.bin "u-boot-rockchip-$${model}.bin" && \
 	      sha256sum "u-boot-rockchip-$${model}.bin" | tee "u-boot-rockchip-$${model}.bin.sha256"; \
 	    done \
@@ -124,7 +134,7 @@ build-u-boot-tf-a:
 	  bash -exc '\
 	    cd $(UBOOT_DIR) && \
 	    export BL31=../$(ATF_BL31) && \
-	    export ROCKCHIP_TPL=../$(RKBIN_DIR)/bin/rk35/rk3568_ddr_1560MHz_v1.25.bin && \
+	    export ROCKCHIP_TPL=../$(STAGED_DDR_BIN) && \
 	    for model in $(QNAP_MODELS); do \
 	      make qnap-ts433-rk3568_defconfig && \
 	      scripts/kconfig/merge_config.sh .config ../u-boot-upstream-tf-a.config && \
@@ -133,7 +143,7 @@ build-u-boot-tf-a:
 	      scripts/config --set-str OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      scripts/config --set-str SPL_OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      make olddefconfig && \
-	      make LOCALVERSION=-qnap-$${model}-b$(BUILD_COMMIT) && \
+	      make LOCALVERSION=-builder-$(VERSION) && \
 	      mv u-boot-rockchip.bin "u-boot-rockchip-$${model}.bin" && \
 	      sha256sum "u-boot-rockchip-$${model}.bin" | tee "u-boot-rockchip-$${model}.bin.sha256"; \
 	    done \
