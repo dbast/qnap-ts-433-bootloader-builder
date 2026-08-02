@@ -71,6 +71,13 @@ Development builds include the commit count and abbreviated commit, for example
 `2026.07-builder-26.07.0-8-gdba09f0`. Builds with uncommitted builder changes
 also end in `-dirty`.
 
+The full builder commit is stored separately in U-Boot's build tag and appears
+in the boot banner and the U-Boot `version` command:
+
+```text
+U-Boot 2026.07-builder-26.07.0 (...), Build: a5dbf57334d7bd7ed989080a44d328f0fea05658
+```
+
 The release bundle uses the same builder version, for example
 `qnap-ts233-ts433-bootloader-26.07.0.zip`.
 

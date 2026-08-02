@@ -21,7 +21,7 @@ DDR_BIN_PATH := bin/rk35/$(DDR_BIN)
 STAGED_DDR_BIN := $(BUILD_DIR)/$(DDR_BIN)
 
 # Version embedded in U-Boot and used for naming the release bundle
-VERSION ?= $(shell git describe --tags --always --dirty)
+VERSION := $(shell git describe --tags --always --dirty)
 ZIP_NAME := qnap-ts233-ts433-bootloader-$(VERSION).zip
 ZIP_PATH := $(DIST_DIR)/$(ZIP_NAME)
 UBOOT_URL := https://github.com/u-boot/u-boot
@@ -32,6 +32,7 @@ BUILDER_URL := https://github.com/dbast/qnap-ts-433-bootloader-builder
 # set SOURCE_DATE_EPOCH for reproducible builds, see
 # https://docs.u-boot.org/en/stable/build/reproducible.html
 SOURCE_DATE_EPOCH := $(shell git log -1 --format=%ct)
+BUILD_COMMIT := $(shell git rev-parse HEAD)
 
 DATE_CMD := $(shell which gdate 2>/dev/null || which date)
 ATF_BUILD_TIMESTAMP := $(strip $(shell TZ=UTC $(DATE_CMD) -d "@$(SOURCE_DATE_EPOCH)" +'"%H:%M:%S, %b %d %Y"'))
@@ -117,7 +118,7 @@ build-u-boot:
 	      scripts/config --set-str OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      scripts/config --set-str SPL_OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      make olddefconfig && \
-	      make LOCALVERSION=-builder-$(VERSION) && \
+	      make LOCALVERSION=-builder-$(VERSION) BUILD_TAG=$(BUILD_COMMIT) && \
 	      mv u-boot-rockchip.bin "u-boot-rockchip-$${model}.bin" && \
 	      sha256sum "u-boot-rockchip-$${model}.bin" | tee "u-boot-rockchip-$${model}.bin.sha256"; \
 	    done \
@@ -143,7 +144,7 @@ build-u-boot-tf-a:
 	      scripts/config --set-str OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      scripts/config --set-str SPL_OF_LIST "rockchip/rk3568-qnap-$${model}" && \
 	      make olddefconfig && \
-	      make LOCALVERSION=-builder-$(VERSION) && \
+	      make LOCALVERSION=-builder-$(VERSION) BUILD_TAG=$(BUILD_COMMIT) && \
 	      mv u-boot-rockchip.bin "u-boot-rockchip-$${model}.bin" && \
 	      sha256sum "u-boot-rockchip-$${model}.bin" | tee "u-boot-rockchip-$${model}.bin.sha256"; \
 	    done \
