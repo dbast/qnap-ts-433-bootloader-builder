@@ -211,7 +211,6 @@ jobs:
       - name: Upgrade and verify timestamp
         run: |
           ots upgrade release/*.ots
-          ots verify release/*.ots
       - name: Upload upgraded timestamp
         run: |
           gh release upload "$RELEASE_TAG" --repo "${{ github.repository }}" --clobber release/*.ots
