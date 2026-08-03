@@ -49,6 +49,11 @@ repos:
     rev: bee27e3a4fd1ea2111cf90ab89cd076c870fce14  # frozen: v1.48.0
     hooks:
       - id: typos
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: 451b56af716f9f0d0c2b816503a3fd0cf8b036fa  # frozen: v1.29.0
+    hooks:
+      - id: zizmor
+        args: [--no-progress, --persona=auditor, --fix]
   - repo: meta
     hooks:
       - id: check-hooks-apply

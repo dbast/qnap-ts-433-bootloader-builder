@@ -1,5 +1,9 @@
 # qnap-ts-433-bootloader-builder
 
+[![Release](https://img.shields.io/github/v/release/dbast/qnap-ts-433-bootloader-builder?display_name=tag&sort=semver)](https://github.com/dbast/qnap-ts-433-bootloader-builder/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&label=CI)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dbast/qnap-ts-433-bootloader-builder)
+
 ## Prior work and acknowledgements
 
 This repository is a small helper on top of excellent upstream work. In particular, [Heiko Stübner](https://github.com/mmind) upstreamed support for the RK3568-based QNAP TS-233 and TS-433 in the Linux kernel and U-Boot, which makes it possible to use these devices with mainline software instead of vendor firmware.
@@ -39,6 +43,52 @@ make submodules enable-binfmt patch-rkbin spl-loader unpatch-rkbin build-image b
 
 Fork the repo and trigger a build via “workflow dispatch” on any branch or tag (i.e. the button next to the build workflow in the Actions tab of the forked repo). The build will upload both model-specific U-Boot images and the updated SPL loader as workflow artifacts that are valid for 2 days.
 
+## Release verification
+
+Download a release bundle and its verification files, replacing `REPLACE_ME` with the release tag:
+
+```sh
+REPOSITORY=dbast/qnap-ts-433-bootloader-builder
+RELEASE_TAG=REPLACE_ME
+BUNDLE="qnap-ts233-ts433-bootloader-$RELEASE_TAG.zip"
+
+gh release download "$RELEASE_TAG" --repo "$REPOSITORY" --pattern "$BUNDLE*"
+```
+
+Check the downloaded files using any or all of these independent methods:
+
+**Checksum** (quick integrity check):
+
+```sh
+sha256sum -c "$BUNDLE.sha256"
+```
+
+**GitHub release attestation** (proves the release is immutable and the downloaded asset matches it):
+
+```sh
+gh release verify "$RELEASE_TAG" --repo "$REPOSITORY"
+gh release verify-asset "$RELEASE_TAG" "$BUNDLE" --repo "$REPOSITORY"
+```
+
+**Sigstore identity** (proves it was built by this repository's CI; requires Sigstore 3.0 or newer):
+
+```sh
+sigstore verify identity \
+  --cert-identity "https://github.com/$REPOSITORY/.github/workflows/ci.yaml@refs/tags/$RELEASE_TAG" \
+  --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+  "$BUNDLE"
+```
+
+**OpenTimestamps** (proves the bundle existed at release time and has not changed since):
+
+Drop `$BUNDLE.ots`, then `$BUNDLE`, onto https://opentimestamps.org.
+
+After verification, extract the bundle for flashing:
+
+```sh
+unzip "$BUNDLE" -d artifacts
+```
+
 ## Flashing
 
 With the NAS in maskrom mode and `rkdeveloptool` installed on a host, select its model and flash the matching image:
@@ -61,25 +111,25 @@ On a running system, read the U-Boot version from the device tree:
 cat /proc/device-tree/chosen/u-boot,version; echo
 ```
 
-The output combines the upstream U-Boot release with the builder release tag:
+The output combines the upstream U-Boot release with the builder release tag. For release `26.08.0`, for example:
 
 ```text
-2026.07-builder-26.07.0
+2026.07-builder-26.08.0
 ```
 
 Development builds include the commit count and abbreviated commit, for example
-`2026.07-builder-26.07.0-8-gdba09f0`. Builds with uncommitted builder changes
+`2026.07-builder-26.08.0-2-g9930cd2`. Builds with uncommitted builder changes
 also end in `-dirty`.
 
 The full builder commit is stored separately in U-Boot's build tag and appears
 in the boot banner and the U-Boot `version` command:
 
 ```text
-U-Boot 2026.07-builder-26.07.0 (...), Build: a5dbf57334d7bd7ed989080a44d328f0fea05658
+U-Boot 2026.07-builder-26.08.0 (...), Build: 159b381c9f0e1201c9fee364881aa360b77f7494
 ```
 
 The release bundle uses the same builder version, for example
-`qnap-ts233-ts433-bootloader-26.07.0.zip`.
+`qnap-ts233-ts433-bootloader-26.08.0.zip`.
 
 ## Reproducibility
 
