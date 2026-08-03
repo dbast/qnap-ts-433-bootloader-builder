@@ -14,6 +14,11 @@ on:
 
 name: CI
 
+env:
+  # renovate: datasource=pypi depName=opentimestamps-client
+  OPENTIMESTAMPS_VERSION: 0.7.2
+  REPOSITORY: ${{ github.repository }}
+
 permissions:
   contents: read
 
@@ -27,13 +32,17 @@ concurrency:
 
 jobs:
   prek:
+    name: prek
     if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
     runs-on: ubuntu-slim
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
   build:
+    name: Build
     if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
@@ -42,6 +51,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          persist-credentials: false
       - name: Install Nix
         uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
       - name: Enable binfmt
@@ -81,13 +91,14 @@ jobs:
           retention-days: 2
 
   draft-release:
+    name: Draft release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: [prek, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
-      contents: write
-      id-token: write
+      contents: write # Create the draft release and upload its assets.
+      id-token: write # Sign the release bundle with Sigstore.
     steps:
       - name: Download result
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -104,7 +115,7 @@ jobs:
       - name: Install OpenTimestamps
         run: |
           python3 -m venv "$RUNNER_TEMP/ots"
-          "$RUNNER_TEMP/ots/bin/pip" install opentimestamps-client==0.7.2
+          "$RUNNER_TEMP/ots/bin/pip" install "opentimestamps-client==$OPENTIMESTAMPS_VERSION"
           echo "$RUNNER_TEMP/ots/bin" >> "$GITHUB_PATH"
       - name: Timestamp release bundle
         run: |
@@ -113,7 +124,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
-          REPOSITORY: ${{ github.repository }}
         run: |
           bundles=(dist/*.zip)
           test "${#bundles[@]}" -eq 1
@@ -130,39 +140,16 @@ jobs:
           done <<< "$GENERATED_NOTES" > release-notes.md
           cat >> release-notes.md <<EOF
 
-          ### Verify the download
+          ### Verify and install
 
-          **1. Checksum** (quick integrity check):
+          - [Verify the release bundle](https://github.com/$REPOSITORY/blob/$RELEASE_TAG/README.md#release-verification)
+          - [Flash the bootloader](https://github.com/$REPOSITORY/blob/$RELEASE_TAG/README.md#flashing)
+          - [Check the installed version](https://github.com/$REPOSITORY/blob/$RELEASE_TAG/README.md#checking-the-installed-version)
 
-          \`\`\`
-          sha256sum -c $BUNDLE.sha256
-          \`\`\`
-
-          **2. Sigstore identity** (proves it was built by this repo's CI; requires sigstore >= 3.0):
-
-          \`\`\`
-          sigstore verify identity \\
-            --cert-identity "https://github.com/$REPOSITORY/.github/workflows/ci.yaml@refs/tags/$RELEASE_TAG" \\
-            --cert-oidc-issuer "https://token.actions.githubusercontent.com" \\
-            $BUNDLE
-          \`\`\`
-
-          **3. OpenTimestamps** (proves the zip existed at release time, and didn't change since then):
-
-          Drop \`$BUNDLE.ots\`, then \`$BUNDLE\`, onto https://opentimestamps.org or verify locally:
-
-          \`\`\`
-          ots verify $BUNDLE.ots
-          \`\`\`
+          The installed builder version should end in \`builder-$RELEASE_TAG\`.
 
           VirusTotal file scan:
           [![VirusTotal file scan](https://badges.cssnr.com/vt/id/$SHA256)](https://www.virustotal.com/gui/file/$SHA256)
-
-          On a device booted into Linux, read the installed version:
-
-          \`\`\`
-          cat /proc/device-tree/chosen/u-boot,version; echo
-          \`\`\`
 
           $FULL_CHANGELOG
           EOF
@@ -171,10 +158,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          if gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" --repo "${{ github.repository }}" --notes-file release-notes.md
+          if IS_DRAFT=$(gh release view "$RELEASE_TAG" --repo "$REPOSITORY" --json isDraft --jq .isDraft 2>/dev/null); then
+            test "$IS_DRAFT" = true
+            gh release edit "$RELEASE_TAG" --repo "$REPOSITORY" --notes-file release-notes.md
           else
-            gh release create "$RELEASE_TAG" --repo "${{ github.repository }}" --verify-tag --title "$RELEASE_TAG" --notes-file release-notes.md --draft
+            gh release create "$RELEASE_TAG" --repo "$REPOSITORY" --verify-tag --title "$RELEASE_TAG" --notes-file release-notes.md --draft
           fi
       - name: Upload draft assets
         env:
@@ -183,37 +171,38 @@ jobs:
         run: >
           gh release upload
           --clobber "$RELEASE_TAG"
-          --repo "${{ github.repository }}"
+          --repo "$REPOSITORY"
           dist/*.zip dist/*.zip.sha256 dist/*.zip.sigstore.json dist/*.zip.ots
 
   finalize-release:
+    name: Finalize release
     if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
-      contents: write
+      contents: write # Upgrade release assets and publish the draft release.
     env:
       GH_TOKEN: ${{ github.token }}
       RELEASE_TAG: ${{ inputs.release_tag }}
     steps:
       - name: Check draft release
         run: |
-          test "$(gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" --json isDraft --jq .isDraft)" = true
+          test "$(gh release view "$RELEASE_TAG" --repo "$REPOSITORY" --json isDraft --jq .isDraft)" = true
       - name: Download timestamp
         run: |
           mkdir release
-          gh release download "$RELEASE_TAG" --repo "${{ github.repository }}" --pattern '*.zip' --pattern '*.ots' --dir release
+          gh release download "$RELEASE_TAG" --repo "$REPOSITORY" --pattern '*.ots' --dir release
       - name: Install OpenTimestamps
         run: |
           python3 -m venv "$RUNNER_TEMP/ots"
-          "$RUNNER_TEMP/ots/bin/pip" install opentimestamps-client==0.7.2
+          "$RUNNER_TEMP/ots/bin/pip" install "opentimestamps-client==$OPENTIMESTAMPS_VERSION"
           echo "$RUNNER_TEMP/ots/bin" >> "$GITHUB_PATH"
-      - name: Upgrade and verify timestamp
+      - name: Upgrade timestamp
         run: |
           ots upgrade release/*.ots
       - name: Upload upgraded timestamp
         run: |
-          gh release upload "$RELEASE_TAG" --repo "${{ github.repository }}" --clobber release/*.ots
+          gh release upload "$RELEASE_TAG" --repo "$REPOSITORY" --clobber release/*.ots
       - name: Publish release
         run: |
-          gh release edit "$RELEASE_TAG" --repo "${{ github.repository }}" --draft=false
+          gh release edit "$RELEASE_TAG" --repo "$REPOSITORY" --draft=false
