@@ -228,6 +228,7 @@ nar-hash:
 
 package:
 	mkdir -p $(DIST_DIR)
+	cp sbom.cdx.json $(ARTIFACTS_DIR)/
 	rm -f $(ZIP_PATH)
 	find $(ARTIFACTS_DIR) -type f -exec touch -t $(TOUCH_TS) {} +
 	cd $(ARTIFACTS_DIR) && \

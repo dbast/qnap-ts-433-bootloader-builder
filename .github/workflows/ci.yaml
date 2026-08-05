@@ -40,6 +40,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          submodules: true
       - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
   build:
     name: Build
@@ -132,7 +133,9 @@ jobs:
         env:
           BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
         run: |
-          for zip in dist/*.zip; do cp "$BUNDLE_PATH" "$zip.intoto.jsonl"; done
+          for zip in dist/*.zip; do
+            cp "$BUNDLE_PATH" "$zip.intoto.jsonl"
+          done
       - name: Create release notes
         env:
           GH_TOKEN: ${{ github.token }}
@@ -185,7 +188,7 @@ jobs:
           gh release upload
           --clobber "$RELEASE_TAG"
           --repo "$REPOSITORY"
-          dist/*.zip dist/*.zip.sha256 dist/*.zip.sigstore.json dist/*.zip.ots dist/*.intoto.jsonl
+          dist/*.zip dist/*.zip.sha256 dist/*.zip.sigstore.json dist/*.zip.ots dist/*.intoto.jsonl artifacts/sbom.cdx.json
 
   finalize-release:
     name: Finalize release
