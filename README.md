@@ -79,6 +79,16 @@ sigstore verify identity \
   "$BUNDLE"
 ```
 
+**Build provenance** (proves which commit, workflow and run built the images; requires GitHub CLI 2.49 or newer):
+
+```sh
+gh attestation verify "$BUNDLE" --repo "$REPOSITORY" \
+  --signer-workflow "$REPOSITORY/.github/workflows/ci.yaml"
+```
+
+Add `--bundle "$BUNDLE.intoto.jsonl"` to verify offline against the downloaded
+attestation instead of querying GitHub.
+
 **OpenTimestamps** (proves the bundle existed at release time and has not changed since):
 
 Drop `$BUNDLE.ots`, then `$BUNDLE`, onto https://opentimestamps.org.
@@ -87,6 +97,14 @@ After verification, extract the bundle for flashing:
 
 ```sh
 unzip "$BUNDLE" -d artifacts
+```
+
+The U-Boot images carry their own provenance, so an extracted image can still be
+verified on its own, without the bundle it came from:
+
+```sh
+gh attestation verify artifacts/u-boot-rockchip-ts433.bin --repo "$REPOSITORY" \
+  --signer-workflow "$REPOSITORY/.github/workflows/ci.yaml"
 ```
 
 ## Flashing
