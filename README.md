@@ -2,6 +2,8 @@
 
 [![Release](https://img.shields.io/github/v/release/dbast/qnap-ts-433-bootloader-builder?display_name=tag&sort=semver)](https://github.com/dbast/qnap-ts-433-bootloader-builder/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&label=CI)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
+[![SLSA Build Level 2](https://slsa.dev/images/gh-badge-level2.svg)](#release-verification)
+[![SBOM](https://img.shields.io/badge/SBOM-CycloneDX%201.6-6f42c1)](sbom.cdx.json)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dbast/qnap-ts-433-bootloader-builder)
 
 ## Prior work and acknowledgements
@@ -57,6 +59,21 @@ gh release download "$RELEASE_TAG" --repo "$REPOSITORY" --pattern "$BUNDLE*"
 
 Check the downloaded files using any or all of these independent methods:
 
+| Mechanism | What it verifies |
+| --- | --- |
+| SHA-256 checksum | The download is byte-for-byte identical to the published checksum |
+| GitHub release attestation | The asset belongs to this immutable repository release and tag |
+| Sigstore signature | This repository's tagged CI workflow signed the release bundle |
+| SLSA/in-toto provenance | The source repository, commit, workflow and run that produced the bundle and U-Boot images |
+| OpenTimestamps | The bundle existed no later than its Bitcoin-anchored timestamp and has not changed |
+| Source NAR hashes | The exact committed source trees used for the builder, U-Boot, TF-A and rkbin |
+| Reproducible build | An independent build from the same inputs produces identical bytes |
+| CycloneDX SBOM | Pinned U-Boot, TF-A and rkbin versions and commits for vulnerability matching |
+| VirusTotal | Current malware-engine results for the release bundle |
+
+No single method proves that firmware is secure; the methods provide complementary
+evidence about identity, integrity, provenance, time and known components.
+
 **Checksum** (quick integrity check):
 
 ```sh
@@ -106,6 +123,26 @@ verified on its own, without the bundle it came from:
 gh attestation verify artifacts/u-boot-rockchip-ts433.bin --repo "$REPOSITORY" \
   --signer-workflow "$REPOSITORY/.github/workflows/ci.yaml"
 ```
+
+### Software bill of materials
+
+The repository tracks `sbom.cdx.json`, a CycloneDX source SBOM listing the pinned
+U-Boot, Trusted Firmware-A and rkbin versions and commits. Components carry NVD
+CPEs, which is what CVE scanners match on:
+
+```sh
+grype sbom:sbom.cdx.json
+```
+
+Trivy currently parses the document but does not scan generic CPE-only
+components from third-party CycloneDX SBOMs.
+
+The same document is included in the bundle and published as the `sbom.cdx.json`
+release asset.
+
+Scanning the images themselves reports nothing, because a stripped bare-metal
+binary carries no component metadata. That is why the BOM is generated from the
+pinned sources instead.
 
 ## Flashing
 

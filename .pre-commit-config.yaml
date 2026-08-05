@@ -54,6 +54,14 @@ repos:
     hooks:
       - id: zizmor
         args: [--no-progress, --persona=auditor, --fix]
+  - repo: local
+    hooks:
+      - id: sbom
+        name: regenerate SBOM
+        entry: python3 sbom.py
+        language: system
+        pass_filenames: false
+        files: ^(\.gitmodules|Makefile|sbom\.py|sbom\.cdx\.json|rkbin|trusted-firmware-a|u-boot)$
   - repo: meta
     hooks:
       - id: check-hooks-apply

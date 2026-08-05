@@ -1,2 +1,4 @@
 [default.extend-words]
 Tage = "Tage"
+# in-toto attestation format, not a misspelling of "into"
+intoto = "intoto"

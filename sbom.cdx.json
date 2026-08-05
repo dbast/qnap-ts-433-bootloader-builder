@@ -1,0 +1,49 @@
+{
+  "$schema": "https://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "version": 1,
+  "components": [
+    {
+      "bom-ref": "u-boot",
+      "type": "library",
+      "name": "u-boot",
+      "version": "2026.07",
+      "purl": "pkg:github/u-boot/u-boot@v2026.07",
+      "properties": [
+        {
+          "name": "git:commit",
+          "value": "ece349ade2973e220f524ce59e59711cc919263f"
+        }
+      ],
+      "cpe": "cpe:2.3:a:denx:u-boot:2026.07:*:*:*:*:*:*:*"
+    },
+    {
+      "bom-ref": "trusted-firmware-a",
+      "type": "library",
+      "name": "trusted-firmware-a",
+      "version": "2.15.0",
+      "purl": "pkg:github/TrustedFirmware-A/trusted-firmware-a@v2.15.0",
+      "properties": [
+        {
+          "name": "git:commit",
+          "value": "da738d5eae93af342fdc4995dd3c05acb4c9d757"
+        }
+      ],
+      "cpe": "cpe:2.3:o:trustedfirmware:trusted_firmware-a:2.15.0:*:*:*:*:*:*:*"
+    },
+    {
+      "bom-ref": "rkbin-ddr",
+      "type": "library",
+      "name": "rk3568_ddr_1560MHz_v1.25.bin",
+      "version": "1.25",
+      "purl": "pkg:github/rockchip-linux/rkbin@ecb4fcbe954edf38b3ae037d5de6d9f5bccf81f4#bin/rk35/rk3568_ddr_1560MHz_v1.25.bin",
+      "properties": [
+        {
+          "name": "git:commit",
+          "value": "ecb4fcbe954edf38b3ae037d5de6d9f5bccf81f4"
+        }
+      ]
+    }
+  ]
+}
