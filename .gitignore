@@ -1,6 +1,7 @@
 artifacts
 dist
 .build
+tmp
 
 # macos
 # General
