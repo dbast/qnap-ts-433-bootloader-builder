@@ -43,8 +43,12 @@ jobs:
           submodules: true
       - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
   build:
-    name: Build
+    name: Build ${{ matrix.attempt }}
     if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2]
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     steps:
@@ -85,16 +89,42 @@ jobs:
       - name: Store result
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: artifacts
+          name: artifacts-${{ matrix.attempt }}
           path: |
             artifacts/**
             dist/**
           retention-days: 2
 
+  reproducibility:
+    name: Reproducibility
+    if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
+    needs: build
+    runs-on: ubuntu-slim
+    timeout-minutes: 5
+    steps:
+      - name: Download first build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: artifacts-1
+          path: build-1
+      - name: Download second build
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: artifacts-2
+          path: build-2
+      - name: Compare bundles
+        run: |
+          echo "Build 1:"
+          sha256sum build-1/dist/*.zip
+          echo "Build 2:"
+          sha256sum build-2/dist/*.zip
+          cmp build-{1,2}/dist/*.zip
+          echo "Bundles are byte-identical."
+
   draft-release:
     name: Draft release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs: [prek, build]
+    needs: [prek, reproducibility]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -105,7 +135,7 @@ jobs:
       - name: Download result
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: artifacts
+          name: artifacts-1
       - name: Sign release bundle
         uses: sigstore/gh-action-sigstore-python@790bc6befb9d733738f18d8f895854b453640ec9 # v3.5.0
         with:

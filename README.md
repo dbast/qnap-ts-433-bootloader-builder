@@ -2,6 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/dbast/qnap-ts-433-bootloader-builder?display_name=tag&sort=semver)](https://github.com/dbast/qnap-ts-433-bootloader-builder/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&label=CI)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
+[![Reproducibility](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&event=push&label=Reproducibility)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
 [![SLSA Build Level 2](https://slsa.dev/images/gh-badge-level2.svg)](#release-verification)
 [![SBOM](https://img.shields.io/badge/SBOM-CycloneDX%201.6-6f42c1)](sbom.cdx.json)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dbast/qnap-ts-433-bootloader-builder)
@@ -67,7 +68,7 @@ Check the downloaded files using any or all of these independent methods:
 | SLSA/in-toto provenance | The source repository, commit, workflow and run that produced the bundle and U-Boot images |
 | OpenTimestamps | The bundle existed no later than its Bitcoin-anchored timestamp and has not changed |
 | Source NAR hashes | The exact committed source trees used for the builder, U-Boot, TF-A and rkbin |
-| Reproducible build | An independent build from the same inputs produces identical bytes |
+| Reproducible build | Two independent CI builds from the same inputs produce identical bytes |
 | CycloneDX SBOM | Pinned U-Boot, TF-A and rkbin versions and commits for vulnerability matching |
 | VirusTotal | Current malware-engine results for the release bundle |
 
@@ -190,6 +191,7 @@ The release bundle uses the same builder version, for example
 
 This project aims for reproducible U-Boot and Trusted Firmware builds via:
 
+- Building every commit twice on independent GitHub-hosted runners and requiring byte-identical release bundles
 - Pinning the entire build environment via Dockerfile, using a pinned base image and date-based `snapshot.debian.org` URLs
 - Pinning `u-boot` / `trusted-firmware-a` / `rkbin` submodules to specific commits
 - Setting `SOURCE_DATE_EPOCH` from the last git commit timestamp (`git log -1 --format=%ct`) to fixate timestamps used during the U-Boot and Trusted Firmware builds (see [Reproducible builds](https://docs.u-boot.org/en/stable/build/reproducible.html))
