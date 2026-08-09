@@ -47,6 +47,8 @@ repos:
     rev: 82912cdaea4fb830f751504486a7879c70526547  # frozen: 1.0.0
     hooks:
       - id: mdformat
+        additional_dependencies:
+          - mdformat-gfm==1.0.0
   - repo: https://github.com/google/keep-sorted
     rev: 339d935575ef7d92f2c9b4df9ce4b724d73c9201  # frozen: v0.9.1
     hooks:

@@ -60,17 +60,17 @@ gh release download "$RELEASE_TAG" --repo "$REPOSITORY" --pattern "$BUNDLE*"
 
 Check the downloaded files using any or all of these independent methods:
 
-| Mechanism | What it verifies |
-| --- | --- |
-| SHA-256 checksum | The download is byte-for-byte identical to the published checksum |
-| GitHub release attestation | The asset belongs to this immutable repository release and tag |
-| Sigstore signature | This repository's tagged CI workflow signed the release bundle |
-| SLSA/in-toto provenance | The source repository, commit, workflow and run that produced the bundle and U-Boot images |
-| OpenTimestamps | The bundle existed no later than its blockchain-anchored timestamp and has not changed |
-| Source NAR hashes | The exact committed source trees used for the builder, U-Boot, TF-A and rkbin |
-| Reproducible build | Two independent CI builds from the same inputs produce identical bytes |
-| CycloneDX SBOM | Pinned U-Boot, TF-A and rkbin versions and commits for vulnerability matching |
-| VirusTotal | Current malware-engine results for the release bundle |
+| Mechanism                  | What it verifies                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------ |
+| SHA-256 checksum           | The download is byte-for-byte identical to the published checksum                          |
+| GitHub release attestation | The asset belongs to this immutable repository release and tag                             |
+| Sigstore signature         | This repository's tagged CI workflow signed the release bundle                             |
+| SLSA/in-toto provenance    | The source repository, commit, workflow and run that produced the bundle and U-Boot images |
+| OpenTimestamps             | The bundle existed no later than its blockchain-anchored timestamp and has not changed     |
+| Source NAR hashes          | The exact committed source trees used for the builder, U-Boot, TF-A and rkbin              |
+| Reproducible build         | Two independent CI builds from the same inputs produce identical bytes                     |
+| CycloneDX SBOM             | Pinned U-Boot, TF-A and rkbin versions and commits for vulnerability matching              |
+| VirusTotal                 | Current malware-engine results for the release bundle                                      |
 
 No single method proves that firmware is secure; the methods provide complementary
 evidence about identity, integrity, provenance, time and known components.
@@ -148,10 +148,10 @@ With the NAS in maskrom mode and `rkdeveloptool` installed on a host, select its
 
 ```sh
 cd artifacts/
-MODEL=ts433  # or ts233
-rkdeveloptool db rk356x_spl_loader_v1.*.bin  # USB/maskrom loader (from rkbin)
+MODEL=ts433                                         # or ts233
+rkdeveloptool db rk356x_spl_loader_v1.*.bin         # USB/maskrom loader (from rkbin)
 rkdeveloptool wl 64 "u-boot-rockchip-${MODEL}.bin"  # write U-Boot to eMMC at sector 64
-rkdeveloptool rd                             # reset
+rkdeveloptool rd                                    # reset
 ```
 
 See above links for the maskrom jumper procedure.
