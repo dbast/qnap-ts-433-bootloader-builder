@@ -101,7 +101,9 @@ sigstore verify identity \
 
 ```sh
 gh attestation verify "$BUNDLE" --repo "$REPOSITORY" \
-  --signer-workflow "$REPOSITORY/.github/workflows/ci.yaml"
+  --signer-workflow "$REPOSITORY/.github/workflows/build.yaml" \
+  --source-ref "refs/tags/$RELEASE_TAG" \
+  --deny-self-hosted-runners
 ```
 
 Add `--bundle "$BUNDLE.intoto.jsonl"` to verify offline against the downloaded
@@ -122,7 +124,9 @@ verified on its own, without the bundle it came from:
 
 ```sh
 gh attestation verify artifacts/u-boot-rockchip-ts433.bin --repo "$REPOSITORY" \
-  --signer-workflow "$REPOSITORY/.github/workflows/ci.yaml"
+  --signer-workflow "$REPOSITORY/.github/workflows/build.yaml" \
+  --source-ref "refs/tags/$RELEASE_TAG" \
+  --deny-self-hosted-runners
 ```
 
 ### Software bill of materials

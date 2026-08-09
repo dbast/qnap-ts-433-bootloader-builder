@@ -1,0 +1,103 @@
+name: Build
+
+on:
+  workflow_call:
+    inputs:
+      attempt:
+        required: true
+        type: number
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build ${{ inputs.attempt }}
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          submodules: true
+          persist-credentials: false
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+      - name: Enable binfmt
+        run: |
+          make enable-binfmt
+      - name: Patch rkbin
+        run: |
+          make patch-rkbin
+      - name: Create SPL Loader
+        run: |
+          make spl-loader
+      - name: Unpatch rkbin
+        run: |
+          make unpatch-rkbin
+      - name: Create container
+        run: |
+          make build-image
+      - name: Build tf-a
+        run: |
+          make build-bl31
+      - name: Build U-Boot
+        run: |
+          make build-u-boot-tf-a
+      - name: Collect licenses
+        run: |
+          make licenses
+      - name: Package bundle
+        run: |
+          make package
+      - name: Store result
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: artifacts-${{ inputs.attempt }}
+          path: |
+            artifacts/**
+            dist/**
+          retention-days: 2
+
+  attest:
+    name: Attest build provenance
+    if: inputs.attempt == 1 && startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read # Download the build artifact.
+      attestations: write # Store the build provenance attestation.
+      contents: read # Associate the attestation with the caller repository.
+      id-token: write # Sign the attestation with Sigstore.
+    steps:
+      - name: Download result
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: artifacts-1
+      - name: Attest build provenance
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            artifacts/u-boot-rockchip-*.bin
+            dist/*.zip
+      - name: Name provenance bundle
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          for zip in dist/*.zip; do
+            cp "$BUNDLE_PATH" "$zip.intoto.jsonl"
+          done
+      - name: Store provenance bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: provenance
+          path: dist/*.intoto.jsonl
+          retention-days: 2
+          if-no-files-found: error
