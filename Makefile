@@ -96,7 +96,7 @@ build-bl31:
 	  bash -exc '\
 	    cd $(ATF_DIR) && \
 	    make PLAT=$(ATF_PLAT) bl31 && \
-	    sha256sum build/$(ATF_PLAT)/release/bl31/bl31.elf | tee build/$(ATF_PLAT)/release/bl31/bl31.elf.sha256 \
+	    cd build/$(ATF_PLAT)/release/bl31 && sha256sum bl31.elf | tee bl31.elf.sha256 \
 	  '
 	mkdir -p $(ARTIFACTS_DIR)
 	cp $(ATF_BL31)* $(ARTIFACTS_DIR)/

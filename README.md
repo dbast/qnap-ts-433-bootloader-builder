@@ -3,7 +3,7 @@
 [![Release](https://img.shields.io/github/v/release/dbast/qnap-ts-433-bootloader-builder?display_name=tag&sort=semver)](https://github.com/dbast/qnap-ts-433-bootloader-builder/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&label=CI)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
 [![Reproducibility](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&event=push&label=Reproducibility)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
-[![SLSA Build Level 2](https://slsa.dev/images/gh-badge-level2.svg)](#release-verification)
+[![SLSA Build Level 3](https://slsa.dev/images/gh-badge-level3.svg)](#release-verification)
 [![SBOM](https://img.shields.io/badge/SBOM-CycloneDX%201.6-6f42c1)](sbom.cdx.json)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dbast/qnap-ts-433-bootloader-builder)
 
@@ -81,7 +81,7 @@ evidence about identity, integrity, provenance, time and known components.
 sha256sum -c "$BUNDLE.sha256"
 ```
 
-**GitHub release attestation** (proves the release is immutable and the downloaded asset matches it):
+**GitHub release attestation** (proves the release is immutable and the downloaded asset matches it; requires GitHub CLI 2.81.0 or newer):
 
 ```sh
 gh release verify "$RELEASE_TAG" --repo "$REPOSITORY"
