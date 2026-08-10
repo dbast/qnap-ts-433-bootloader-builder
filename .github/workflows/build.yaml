@@ -15,7 +15,7 @@ defaults:
 
 jobs:
   build:
-    name: Build ${{ inputs.attempt }}
+    name: Build
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 10
     permissions:

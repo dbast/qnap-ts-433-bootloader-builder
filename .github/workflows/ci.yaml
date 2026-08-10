@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   prek:
-    name: prek
+    name: Lint
     if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
     runs-on: ubuntu-slim
     timeout-minutes: 5
@@ -42,6 +42,7 @@ jobs:
           persist-credentials: false
           submodules: true
       - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
+
   build:
     name: Build ${{ matrix.attempt }}
     if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
@@ -59,7 +60,7 @@ jobs:
       attempt: ${{ matrix.attempt }}
 
   reproducibility:
-    name: Reproducibility
+    name: Check reproducibility
     if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
     needs: build
     runs-on: ubuntu-slim
