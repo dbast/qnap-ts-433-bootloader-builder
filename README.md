@@ -2,6 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/dbast/qnap-ts-433-bootloader-builder?display_name=tag&sort=semver)](https://github.com/dbast/qnap-ts-433-bootloader-builder/releases/latest)
 [![CI](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&label=CI)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
+[![Security scan](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/scan.yaml?branch=main&label=Security%20scan)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/scan.yaml)
 [![Reproducibility](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&event=push&label=Reproducibility)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
 [![SLSA Build Level 3](https://slsa.dev/images/gh-badge-level3.svg)](#release-verification)
 [![SBOM](https://img.shields.io/badge/SBOM-CycloneDX%201.6-6f42c1)](sbom.cdx.json)
@@ -141,6 +142,9 @@ grype sbom:sbom.cdx.json
 
 The same document is included in the bundle and published as the `sbom.cdx.json`
 release asset.
+
+GitHub Code Scanning runs Grype against the SBOM and CodeQL against the
+repository's Python on every pull request, every push to `main`, and monthly.
 
 ## Flashing
 
