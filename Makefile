@@ -205,7 +205,7 @@ licenses:
 	  echo "  NAR hash    : $$atf_hash"; \
 	  echo ""; \
 	  echo "rk356x_loader_v1.*.bin"; \
-	  echo "  Description : Rockchip SPL loader (proprietary DDR init +"; \
+	  echo "  Description : Rockchip USB/maskrom loader (proprietary DDR init +"; \
 	  echo "                miniloader blobs, merged via boot_merger)"; \
 	  echo "  License     : Rockchip proprietary (see LICENSES/rkbin-LICENSE.txt)"; \
 	  echo "  Source      : $(RKBIN_URL) (redistributable binary blobs)"; \
