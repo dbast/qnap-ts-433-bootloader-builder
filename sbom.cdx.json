@@ -35,13 +35,13 @@
     {
       "bom-ref": "rkbin-ddr",
       "type": "library",
-      "name": "rk3568_ddr_1560MHz_v1.25.bin",
-      "version": "1.25",
-      "purl": "pkg:github/rockchip-linux/rkbin@ecb4fcbe954edf38b3ae037d5de6d9f5bccf81f4#bin/rk35/rk3568_ddr_1560MHz_v1.25.bin",
+      "name": "rk3568_ddr_1560MHz_v1.26.bin",
+      "version": "1.26",
+      "purl": "pkg:github/rockchip-linux/rkbin@3e288fe814e059dd06833495f845cab04ac20a5c#bin/rk35/rk3568_ddr_1560MHz_v1.26.bin",
       "properties": [
         {
           "name": "git:commit",
-          "value": "ecb4fcbe954edf38b3ae037d5de6d9f5bccf81f4"
+          "value": "3e288fe814e059dd06833495f845cab04ac20a5c"
         }
       ]
     }
