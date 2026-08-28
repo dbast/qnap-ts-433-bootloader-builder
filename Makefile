@@ -16,7 +16,7 @@ ARTIFACTS_DIR := artifacts
 LICENSES_DIR := $(ARTIFACTS_DIR)/LICENSES
 DIST_DIR := dist
 BUILD_DIR := .build
-DDR_BIN := rk3568_ddr_1560MHz_v1.25.bin
+DDR_BIN := rk3568_ddr_1560MHz_v1.26.bin
 DDR_BIN_PATH := bin/rk35/$(DDR_BIN)
 STAGED_DDR_BIN := $(BUILD_DIR)/$(DDR_BIN)
 
@@ -80,11 +80,11 @@ spl-loader:
 		apt-get install -y --no-install-recommends python3 && \
 	    tools/ddrbin_tool.py rk3568 tools/ddrbin_param.txt $(DDR_BIN_PATH) && \
 	    tools/boot_merger RKBOOT/RK3568MINIALL.ini && \
-	    python3 ../normalize-rockchip-loader.py rk356x_spl_loader_v1.*.bin && \
-		sha256sum rk356x_spl_loader_v1.*.bin | tee rk356x_spl_loader_v1.sha256 && \
+	    python3 ../normalize-rockchip-loader.py rk356x_loader_v1.*.bin && \
+		sha256sum rk356x_loader_v1.*.bin | tee rk356x_loader_v1.sha256 && \
 	    cp $(DDR_BIN_PATH) /rkbin-src/$(STAGED_DDR_BIN) && \
-	    cp rk356x_spl_loader_v1.* /rkbin-src/$(ARTIFACTS_DIR)/ && \
-	    chown $$HOST_UID:$$HOST_GID /rkbin-src/$(STAGED_DDR_BIN) /rkbin-src/$(ARTIFACTS_DIR)/rk356x_spl_loader_v1.* \
+	    cp rk356x_loader_v1.* /rkbin-src/$(ARTIFACTS_DIR)/ && \
+	    chown $$HOST_UID:$$HOST_GID /rkbin-src/$(STAGED_DDR_BIN) /rkbin-src/$(ARTIFACTS_DIR)/rk356x_loader_v1.* \
 	  '
 
 build-bl31:
@@ -204,8 +204,8 @@ licenses:
 	  echo "  Commit      : $$atf_commit"; \
 	  echo "  NAR hash    : $$atf_hash"; \
 	  echo ""; \
-	  echo "rk356x_spl_loader_v1.*.bin"; \
-	  echo "  Description : Rockchip SPL loader (proprietary DDR init +"; \
+	  echo "rk356x_loader_v1.*.bin"; \
+	  echo "  Description : Rockchip USB/maskrom loader (proprietary DDR init +"; \
 	  echo "                miniloader blobs, merged via boot_merger)"; \
 	  echo "  License     : Rockchip proprietary (see LICENSES/rkbin-LICENSE.txt)"; \
 	  echo "  Source      : $(RKBIN_URL) (redistributable binary blobs)"; \

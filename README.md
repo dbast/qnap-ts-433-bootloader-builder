@@ -153,7 +153,7 @@ With the NAS in maskrom mode and `rkdeveloptool` installed on a host, select its
 ```sh
 cd artifacts/
 MODEL=ts433                                         # or ts233
-rkdeveloptool db rk356x_spl_loader_v1.*.bin         # USB/maskrom loader (from rkbin)
+rkdeveloptool db rk356x_loader_v1.*.bin             # USB/maskrom loader (from rkbin)
 rkdeveloptool wl 64 "u-boot-rockchip-${MODEL}.bin"  # write U-Boot to eMMC at sector 64
 rkdeveloptool rd                                    # reset
 ```
