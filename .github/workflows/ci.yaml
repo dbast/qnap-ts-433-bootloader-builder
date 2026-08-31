@@ -55,7 +55,7 @@ jobs:
       attestations: write # Let the called workflow store build provenance.
       contents: read # Let the called workflow check out this repository.
       id-token: write # Let the called workflow sign build provenance.
-    uses: ./.github/workflows/build.yaml
+    uses: $/.github/workflows/build.yaml
     with:
       attempt: ${{ matrix.attempt }}
 
