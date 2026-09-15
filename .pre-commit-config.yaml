@@ -54,7 +54,7 @@ repos:
     hooks:
       - id: keep-sorted
   - repo: https://github.com/crate-ci/typos
-    rev: d43b6c087ac471e2ea7b8af622ff15f05c0c365b  # frozen: v1.50.1
+    rev: 512fc24f32f44ab01972217aaaf3dc86ec234d53  # frozen: v1.50.2
     hooks:
       - id: typos
   - repo: https://github.com/zizmorcore/zizmor-pre-commit
