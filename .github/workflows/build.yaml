@@ -16,7 +16,7 @@ defaults:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-26.04-arm
     timeout-minutes: 10
     permissions:
       contents: read
@@ -68,7 +68,7 @@ jobs:
     name: Attest build provenance
     if: inputs.attempt == 1 && startsWith(github.ref, 'refs/tags/')
     needs: build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 5
     permissions:
       actions: read # Download the build artifact.

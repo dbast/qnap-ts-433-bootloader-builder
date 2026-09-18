@@ -89,7 +89,7 @@ jobs:
     name: Draft release
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: [prek, reproducibility]
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: write # Create the draft release and upload its assets.
@@ -177,7 +177,7 @@ jobs:
   finalize-release:
     name: Finalize release
     if: github.event_name == 'workflow_dispatch' && inputs.release_tag != ''
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     permissions:
       contents: write # Upgrade release assets and publish the draft release.
