@@ -1,4 +1,4 @@
-FROM debian:trixie-20260918-slim@sha256:93b9a6764e5d7a53b6b3682cc370cbb85ace510ffe5f60b6a03821655a4b3e52
+FROM debian:trixie-20260918-slim@sha256:a99cfc517144bc59b1978475ec53b46ecabec7e43635402ee5b77cc54cd1b20a
 
 # Use Debian snapshot URLs for reproducible builds.
 RUN sed -i 's|^# \(http://snapshot.debian.org/archive/[^ ]*\)$|URIs: \1|; s|^\(URIs: http://deb\.debian\.org/.*\)$|# \1|' \
