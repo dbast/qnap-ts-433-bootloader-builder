@@ -59,22 +59,30 @@ BUNDLE="qnap-ts233-ts433-bootloader-$RELEASE_TAG.zip"
 gh release download "$RELEASE_TAG" --repo "$REPOSITORY" --pattern "$BUNDLE*"
 ```
 
-Check the downloaded files using any or all of these independent methods:
+Check the downloaded files using any or all of these independent methods. They
+are ordered by operator independence: the top rows keep verifying with pure
+math even if every service involved disappears, while the bottom rows are the
+strongest today but hinge on entities that can vanish — GitHub as a live
+service, Sigstore as a few kilobytes of trust-root keys cached by every
+Sigstore client.
 
-| Mechanism                  | What it verifies                                                                           |
-| -------------------------- | ------------------------------------------------------------------------------------------ |
-| SHA-256 checksum           | The download is byte-for-byte identical to the published checksum                          |
-| GitHub release attestation | The asset belongs to this immutable repository release and tag                             |
-| Sigstore signature         | This repository's tagged CI workflow signed the release bundle                             |
-| SLSA/in-toto provenance    | The source repository, commit, workflow and run that produced the bundle and U-Boot images |
-| OpenTimestamps             | The bundle existed no later than its blockchain-anchored timestamp and has not changed     |
-| Source NAR hashes          | The exact committed source trees used for the builder, U-Boot, TF-A and rkbin              |
-| Reproducible build         | Two independent CI builds from the same inputs produce identical bytes                     |
-| CycloneDX SBOM             | Pinned U-Boot, TF-A and rkbin versions and commits for vulnerability matching              |
-| VirusTotal                 | Current malware-engine results for the release bundle                                      |
+| Mechanism                  | What it verifies                                                                           | Trust anchor               |
+| -------------------------- | ------------------------------------------------------------------------------------------ | -------------------------- |
+| Reproducible build         | Two independent CI builds from the same inputs produce identical bytes                     | None — pure math           |
+| Source NAR hashes          | The exact committed source trees used for the builder, U-Boot, TF-A and rkbin              | None — pure math           |
+| drand freshness token      | The bundle was assembled no earlier than its embedded League of Entropy beacon round       | None — offline math        |
+| OpenTimestamps             | The bundle existed no later than its blockchain-anchored timestamp and has not changed     | Any Bitcoin node           |
+| SHA-256 checksum           | The download is byte-for-byte identical to the published checksum                          | This release page          |
+| Sigstore signature         | This repository's tagged CI workflow signed the release bundle                             | Sigstore                   |
+| SLSA/in-toto provenance    | The source repository, commit, workflow and run that produced the bundle and U-Boot images | GitHub + Sigstore          |
+| GitHub release attestation | The asset belongs to this immutable repository release and tag                             | GitHub                     |
+| CycloneDX SBOM             | Pinned U-Boot, TF-A and rkbin versions and commits for vulnerability matching              | Informational, not a proof |
+| VirusTotal                 | Current malware-engine results for the release bundle                                      | Informational, not a proof |
 
 No single method proves that firmware is secure; the methods provide complementary
 evidence about identity, integrity, provenance, time and known components.
+Reproducibility is the strongest of them — it needs no third party at all,
+just the pinned sources and build environment.
 
 **Checksum** (quick integrity check):
 
@@ -113,6 +121,36 @@ attestation instead of querying GitHub.
 **OpenTimestamps** (proves the bundle existed at release time and has not changed since):
 
 Drop `$BUNDLE.ots`, then `$BUNDLE`, onto https://opentimestamps.org.
+
+**drand freshness token** (proves the bundle was assembled *no earlier than* a
+publicly verifiable point in time — the complement of OpenTimestamps):
+
+The bundle contains `DRAND.json`, a [drand](https://drand.love) beacon round
+from the League of Entropy. Each round's value is a threshold BLS signature
+that does not exist before its round's time, so embedding it proves the build
+ran after `round_time` — which is recomputed from the round number, not
+trusted from the file:
+
+```sh
+unzip -p "$BUNDLE" DRAND.json | jq .
+# The beacon is self-certifying: randomness must equal sha256(signature)
+SIG=$(unzip -p "$BUNDLE" DRAND.json | jq -r .signature)
+printf '%s' "$SIG" | xxd -r -p | sha256sum
+unzip -p "$BUNDLE" DRAND.json | jq -r .randomness  # must match
+```
+
+For full verification of the BLS signature against the League's public key,
+and to confirm the round exists on the beacon chain:
+
+```sh
+ROUND=$(unzip -p "$BUNDLE" DRAND.json | jq -r .round)
+drand get public --round "$ROUND" https://api.drand.sh
+```
+
+`round_time` should sit just before the release date and before the
+OpenTimestamps time, bracketing the release assembly to a narrow window.
+Verification is pure math against the League's well-known 48-byte public key,
+so the proof keeps working even if every drand relay disappears.
 
 After verification, extract the bundle for flashing:
 
@@ -193,9 +231,18 @@ The release bundle uses the same builder version, for example
 This project aims for reproducible U-Boot and Trusted Firmware builds via:
 
 - Building every commit twice on independent GitHub-hosted runners and requiring byte-identical release bundles
+
 - Pinning the entire build environment via Dockerfile, using a pinned base image and date-based `snapshot.debian.org` URLs
+
 - Pinning `u-boot` / `trusted-firmware-a` / `rkbin` submodules to specific commits
+
 - Setting `SOURCE_DATE_EPOCH` from the last git commit timestamp (`git log -1 --format=%ct`) to fixate timestamps used during the U-Boot and Trusted Firmware builds (see [Reproducible builds](https://docs.u-boot.org/en/stable/build/reproducible.html))
+
+- Treating the drand freshness beacon as a *recorded build input*: CI fetches one League of Entropy round per run, passes it to both build attempts, and stores it in the bundle as `DRAND.json`. To reproduce a release bundle byte-for-byte, inject the same beacon before packaging:
+
+  ```sh
+  make freshness DRAND_BEACON="$(unzip -p "$BUNDLE" DRAND.json | jq -c '{round, randomness, signature}')"
+  ```
 
 ## Distro-specific documentation
 

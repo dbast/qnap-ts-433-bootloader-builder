@@ -43,9 +43,30 @@ jobs:
           submodules: true
       - uses: j178/prek-action@4e14d07f9231acabce116ccfca13b13dd9755ece # v3.0.0
 
+  drand:
+    name: Fetch drand beacon
+    if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
+    runs-on: ubuntu-26.04
+    timeout-minutes: 2
+    outputs:
+      beacon: ${{ steps.fetch.outputs.beacon }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # One League of Entropy round per CI run, passed to all build
+      # attempts so their bundles stay byte-identical.
+      - name: Fetch latest round
+        id: fetch
+        run: |
+          beacon="$(make -s drand-beacon)"
+          echo "$beacon"
+          echo "beacon=$beacon" >> "$GITHUB_OUTPUT"
+
   build:
     name: Build ${{ matrix.attempt }}
     if: github.event_name != 'workflow_dispatch' || inputs.release_tag == ''
+    needs: drand
     strategy:
       fail-fast: false
       matrix:
@@ -58,6 +79,7 @@ jobs:
     uses: $/.github/workflows/build.yaml
     with:
       attempt: ${{ matrix.attempt }}
+      drand_beacon: ${{ needs.drand.outputs.beacon }}
 
   reproducibility:
     name: Check reproducibility
