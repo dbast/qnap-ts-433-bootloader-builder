@@ -39,6 +39,17 @@ ATF_BUILD_TIMESTAMP := $(strip $(shell TZ=UTC $(DATE_CMD) -d "@$(SOURCE_DATE_EPO
 # portable touch timestamp ([[CC]YY]MMDDhhmm.ss) for reproducible zip entries
 TOUCH_TS := $(shell TZ=UTC $(DATE_CMD) -d "@$(SOURCE_DATE_EPOCH)" +%Y%m%d%H%M.%S)
 
+# drand freshness token (https://drand.love): a League of Entropy beacon
+# round embedded in the bundle as a recorded build *input*. CI fetches one
+# round per run and passes it to all build attempts, keeping the bundle
+# reproducible: same commit + same beacon -> identical bytes. The beacon
+# value is unpredictable before its round time, so its presence proves the
+# bundle was assembled no earlier than time(round) = genesis + (round-1)*period.
+# Chain constants from https://api.drand.sh/info (default chain).
+DRAND_CHAIN_HASH := 8990e7a9aaed2ffed73dbd7092123d6f289930540d7651336225dc172e51b2ce
+DRAND_GENESIS := 1595431050
+DRAND_PERIOD := 30
+
 clean:
 	git clean -fdx
 	git submodule foreach --recursive git clean -fdx
@@ -225,6 +236,38 @@ nar-hash:
 	git -C "$(DIR)" archive --format=tar HEAD | tar -x -C "$$tmp"; \
 	nix hash path --extra-experimental-features nix-command --type sha256 --sri "$$tmp"; \
 	rm -rf "$$tmp"
+
+# Print the latest drand beacon round as compact JSON on stdout.
+# Two independent relays must agree on round, randomness and signature.
+# Retried: the two fetches can straddle a 30s round flip.
+drand-beacon:
+	@for i in 1 2 3; do \
+	  a=$$(curl -fsSL --retry 3 https://api.drand.sh/public/latest); \
+	  b=$$(curl -fsSL --retry 3 https://drand.cloudflare.com/public/latest); \
+	  if [[ "$$(jq -r .round <<<"$$a")" == "$$(jq -r .round <<<"$$b")" \
+	     && "$$(jq -r .randomness <<<"$$a")" == "$$(jq -r .randomness <<<"$$b")" \
+	     && "$$(jq -r .signature <<<"$$a")" == "$$(jq -r .signature <<<"$$b")" ]]; then \
+	    jq -c '{round, randomness, signature}' <<<"$$a"; \
+	    exit 0; \
+	  fi; \
+	  sleep 2; \
+	done; \
+	echo "drand relays disagree" >&2; \
+	exit 1
+
+# Usage: make freshness [DRAND_BEACON='{"round":N,"randomness":"..","signature":".."}']
+# Without DRAND_BEACON the latest round is fetched via the drand-beacon target.
+freshness:
+	mkdir -p $(ARTIFACTS_DIR)
+	beacon='$(DRAND_BEACON)'; \
+	if [[ -z "$$beacon" ]]; then beacon=$$($(MAKE) -s drand-beacon); fi; \
+	jq -n -S \
+	  --argjson beacon "$$beacon" \
+	  --arg chain_hash "$(DRAND_CHAIN_HASH)" \
+	  --argjson genesis_time $(DRAND_GENESIS) \
+	  --argjson period $(DRAND_PERIOD) \
+	  '$$beacon | if (.round|type) != "number" or (.randomness|type) != "string" or (.signature|type) != "string" then error("invalid DRAND_BEACON") else . end | {round, randomness, signature} + {chain_hash: $$chain_hash, genesis_time: $$genesis_time, period: $$period, round_time: ($$genesis_time + ($$beacon.round - 1) * $$period)}' \
+	  | tee $(ARTIFACTS_DIR)/DRAND.json
 
 package:
 	mkdir -p $(DIST_DIR)

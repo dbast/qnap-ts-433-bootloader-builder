@@ -6,6 +6,11 @@ on:
       attempt:
         required: true
         type: number
+      drand_beacon:
+        description: drand beacon JSON fetched once per CI run, embedded as freshness token
+        required: false
+        type: string
+        default: ''
 
 permissions: {}
 
@@ -52,6 +57,11 @@ jobs:
       - name: Collect licenses
         run: |
           make licenses
+      - name: Embed drand freshness token
+        env:
+          DRAND_BEACON: ${{ inputs.drand_beacon }}
+        run: |
+          make freshness
       - name: Package bundle
         run: |
           make package
