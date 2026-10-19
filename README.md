@@ -6,7 +6,6 @@
 [![Reproducibility](https://img.shields.io/github/actions/workflow/status/dbast/qnap-ts-433-bootloader-builder/ci.yaml?branch=main&event=push&label=Reproducibility)](https://github.com/dbast/qnap-ts-433-bootloader-builder/actions/workflows/ci.yaml)
 [![SLSA Build Level 3](https://slsa.dev/images/gh-badge-level3.svg)](#release-verification)
 [![SBOM](https://img.shields.io/badge/SBOM-CycloneDX%201.6-6f42c1)](sbom.cdx.json)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/dbast/qnap-ts-433-bootloader-builder)
 
 ## Prior work and acknowledgements
 
