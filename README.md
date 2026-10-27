@@ -255,7 +255,7 @@ Or follow the instructions in the [debian](debian/) folder for an SSH-based Debi
 
 ## TODO
 
-Integrate an open-source DDR training implementation once the community reverse-engineering effort for RK3568 DRAM initialization has matured (see CyReVolt’s ongoing [work](https://mastodon.social/@CyReVolt/114762696953789988)). This would allow replacing the remaining rkbin DDR firmware blobs and complete the transition to a fully open boot chain.
+Integrate an open-source DDR training implementation once the community reverse-engineering effort for RK3568 DRAM initialization has matured (see CyReVolt’s ongoing [work](https://mastodon.social/@CyReVolt/114762696953789988) and Pavel Golikov's [18-patch U-Boot RFC series, "rockchip: rk3568: add DRAM controller driver and initialize DRAM at TPL stage"](https://www.mail-archive.com/u-boot@lists.denx.de/msg574495.html), posted May 17, 2026). The series implements blob-free DRAM initialization in TPL; its cover letter reports testing only on RK3568 with 4 GB LPDDR4, with DDR4 support untested. Evaluating and validating it on the supported QNAP boards remains TODO. This would allow replacing the remaining rkbin DDR firmware blobs and complete the transition to a fully open boot chain.
 
 ## Related devices
 
