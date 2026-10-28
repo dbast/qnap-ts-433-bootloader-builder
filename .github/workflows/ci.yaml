@@ -16,7 +16,7 @@ name: CI
 
 env:
   # renovate: datasource=pypi depName=opentimestamps-client
-  OPENTIMESTAMPS_VERSION: 0.7.2
+  OPENTIMESTAMPS_VERSION: 0.8.0
   REPOSITORY: ${{ github.repository }}
 
 permissions:
