@@ -10,7 +10,7 @@ QNAP_MODELS := ts233 ts433
 
 DOCKER_IMAGE := qnap-ts233-ts433-uboot-builder:latest
 # renovate: datasource=docker depName=debian versioning=regex:^trixie-(?<major>\d{4})(?<minor>\d{2})(?<patch>\d{2})-slim$
-RKBIN_TOOLS_IMAGE := debian:trixie-20261020-slim@sha256:62bd423aeee912639ca8ee681c2b762cb3e25137e0a92b20be455898a9f034ad
+RKBIN_TOOLS_IMAGE := debian:trixie-20261027-slim@sha256:26c37952d274874448dd4f0943fc79bfb7c3d9cc8c8004ac4dc987489ca931be
 
 ARTIFACTS_DIR := artifacts
 LICENSES_DIR := $(ARTIFACTS_DIR)/LICENSES
