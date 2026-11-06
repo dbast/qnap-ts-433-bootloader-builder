@@ -22,7 +22,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-26.04-arm
-    timeout-minutes: 10
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
