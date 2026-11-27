@@ -68,7 +68,7 @@ Sigstore client.
 | Mechanism                  | What it verifies                                                                           | Trust anchor               |
 | -------------------------- | ------------------------------------------------------------------------------------------ | -------------------------- |
 | Reproducible build         | Two independent CI builds from the same inputs produce identical bytes                     | None — pure math           |
-| Source NAR hashes          | The exact committed source trees used for the builder, U-Boot, TF-A and rkbin              | None — pure math           |
+| Source NAR hashes          | Committed Git archives for the builder and all submodules, including nested ones           | None — pure math           |
 | drand freshness token      | The bundle was assembled no earlier than its embedded League of Entropy beacon round       | None — offline math        |
 | OpenTimestamps             | The bundle existed no later than its blockchain-anchored timestamp and has not changed     | Any Bitcoin node           |
 | SHA-256 checksum           | The download is byte-for-byte identical to the published checksum                          | This release page          |
