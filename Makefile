@@ -163,20 +163,52 @@ build-u-boot-tf-a:
 	mkdir -p $(ARTIFACTS_DIR)
 	cp $(UBOOT_DIR)/u-boot-rockchip-*.b* $(ARTIFACTS_DIR)/
 
+define NAR_HASH_FUNCTION
+nar_hash() ( \
+	set -e; \
+	tmp=$$(mktemp -d); \
+	trap 'rm -rf "$$tmp"' EXIT; \
+	git -C "$$1" archive --format=tar HEAD | tar -x -C "$$tmp"; \
+	nix hash path --extra-experimental-features nix-command --type sha256 --sri "$$tmp"; \
+);
+endef
+
+# Walk committed gitlinks so uninitialized submodules cannot be skipped.
 licenses:
 	mkdir -p $(LICENSES_DIR)
 	cp $(UBOOT_DIR)/Licenses/gpl-2.0.txt $(LICENSES_DIR)/u-boot-GPL-2.0.txt
 	cp $(ATF_DIR)/docs/license.rst $(LICENSES_DIR)/trusted-firmware-a-BSD-3-Clause.txt
 	cp $(RKBIN_DIR)/LICENSE $(LICENSES_DIR)/rkbin-LICENSE.txt
 	cp LICENSE $(LICENSES_DIR)/builder-BSD-3-Clause.txt
+	$(NAR_HASH_FUNCTION) \
+	submodule_hashes() { \
+	  local repo=$$1 entry commit path hash; \
+	  git -C "$$repo" ls-tree -rdz --full-tree HEAD | while IFS= read -r -d '' entry; do \
+	    case "$$entry" in '160000 commit '*) ;; *) continue ;; esac; \
+	    commit=$${entry%%$$'\t'*}; \
+	    commit=$${commit##* }; \
+	    path=$$repo/$${entry#*$$'\t'}; \
+	    if [[ ! -e "$$path/.git" || "$$(git -C "$$path" rev-parse HEAD)" != "$$commit" ]]; then \
+	      printf 'Expected %s at %s; run make submodules\n' "$$commit" "$$path" >&2; \
+	      return 1; \
+	    fi; \
+	    case "$$path" in \
+	      ./$(UBOOT_DIR)|./$(ATF_DIR)|./$(RKBIN_DIR)) ;; \
+	      *) hash=$$(nar_hash "$$path"); \
+	         printf '  %q\n    Commit   : %s\n    NAR hash : %s\n' "$${path#./}" "$$commit" "$$hash" ;; \
+	    esac; \
+	    submodule_hashes "$$path"; \
+	  done; \
+	}; \
+	extra_hashes=$$(set -e; export LC_ALL=C; submodule_hashes .); \
 	uboot_commit=$$(git -C $(UBOOT_DIR) rev-parse HEAD); \
 	atf_commit=$$(git -C $(ATF_DIR) rev-parse HEAD); \
 	rkbin_commit=$$(git -C $(RKBIN_DIR) rev-parse HEAD); \
 	builder_commit=$$(git rev-parse HEAD); \
-	builder_hash=$$($(MAKE) -s --no-print-directory nar-hash DIR=.); \
-	uboot_hash=$$($(MAKE) -s --no-print-directory nar-hash DIR=$(UBOOT_DIR)); \
-	atf_hash=$$($(MAKE) -s --no-print-directory nar-hash DIR=$(ATF_DIR)); \
-	rkbin_hash=$$($(MAKE) -s --no-print-directory nar-hash DIR=$(RKBIN_DIR)); \
+	builder_hash=$$(nar_hash .); \
+	uboot_hash=$$(nar_hash $(UBOOT_DIR)); \
+	atf_hash=$$(nar_hash $(ATF_DIR)); \
+	rkbin_hash=$$(nar_hash $(RKBIN_DIR)); \
 	{ \
 	  echo "QNAP TS-233/TS-433 bootloader artifacts - licensing & source notice"; \
 	  echo "==================================================================="; \
@@ -184,12 +216,12 @@ licenses:
 	  echo "Generated for builder commit $$builder_commit"; \
 	  echo "Builder source: $(BUILDER_URL)"; \
 	  echo ""; \
-	  echo "Per-repo source NAR hashes are listed with each component below."; \
-	  echo "Each is the Nix archive (NAR) hash of that repository's committed"; \
-	  echo "tree (tracked files only). Reproduce with:"; \
-	  echo "  git -C <repo> archive HEAD | tar -x -C tmp && nix hash path tmp"; \
-	  echo "(equivalently 'make nar-hash DIR=<repo>'). Reads HEAD, so patches"; \
-	  echo "and build outputs do not affect it."; \
+	  echo "Each source NAR hash covers the Git archive of the listed commit."; \
+	  echo "Git archives omit submodule contents, so submodules at every depth"; \
+	  echo "are hashed separately. To reproduce, extract into an empty directory:"; \
+	  echo "  git -C <repo> archive <commit> | tar -x -C tmp && nix hash path tmp"; \
+	  echo "Use 'make nar-hash DIR=<repo>' when that commit is checked out."; \
+	  echo "Local patches and build outputs do not affect these hashes."; \
 	  echo ""; \
 	  echo "This release bundles binaries built from / derived from several"; \
 	  echo "upstream projects. Each binary and its license terms are listed"; \
@@ -228,14 +260,15 @@ licenses:
 	  echo "BSD-3-Clause (see LICENSES/builder-BSD-3-Clause.txt)."; \
 	  echo "  Commit   : $$builder_commit"; \
 	  echo "  NAR hash : $$builder_hash"; \
+	  if [[ -n "$$extra_hashes" ]]; then \
+	    printf '\nAdditional submodule source archives:\n%s\n' "$$extra_hashes"; \
+	  fi; \
 	} > $(ARTIFACTS_DIR)/NOTICE.txt
 
 # Usage: make nar-hash DIR=u-boot
 nar-hash:
-	@tmp=$$(mktemp -d); \
-	git -C "$(DIR)" archive --format=tar HEAD | tar -x -C "$$tmp"; \
-	nix hash path --extra-experimental-features nix-command --type sha256 --sri "$$tmp"; \
-	rm -rf "$$tmp"
+	@$(NAR_HASH_FUNCTION) \
+	nar_hash "$(DIR)"
 
 # Print the latest drand beacon round as compact JSON on stdout.
 # Two independent relays must agree on round, randomness and signature.
