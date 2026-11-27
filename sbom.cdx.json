@@ -22,15 +22,15 @@
       "bom-ref": "trusted-firmware-a",
       "type": "library",
       "name": "trusted-firmware-a",
-      "version": "2.15.0",
-      "purl": "pkg:github/TrustedFirmware-A/trusted-firmware-a@v2.15.0",
+      "version": "2.16.0",
+      "purl": "pkg:github/TrustedFirmware-A/trusted-firmware-a@v2.16.0",
       "properties": [
         {
           "name": "git:commit",
-          "value": "da738d5eae93af342fdc4995dd3c05acb4c9d757"
+          "value": "87cc230066271910096e025cf07376dba6c361d8"
         }
       ],
-      "cpe": "cpe:2.3:o:trustedfirmware:trusted_firmware-a:2.15.0:*:*:*:*:*:*:*"
+      "cpe": "cpe:2.3:o:trustedfirmware:trusted_firmware-a:2.16.0:*:*:*:*:*:*:*"
     },
     {
       "bom-ref": "rkbin-ddr",
